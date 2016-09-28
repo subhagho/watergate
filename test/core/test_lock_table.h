@@ -1,0 +1,17 @@
+//
+// Created by Subhabrata Ghosh on 22/09/16.
+//
+
+#ifndef WATERGATE_TEST_LOCK_TABLE_H
+#define WATERGATE_TEST_LOCK_TABLE_H
+#define CATCH_CONFIG_MAIN
+
+#include <iostream>
+#include "../include/catch.hpp"
+#include "includes/common/_env.h"
+#include "../common/test_common.h"
+#include "includes/core/lock_table.h"
+
+#define CONFIG_FILE "/work/dev/wookler/watergate/test/data/test-sem-conf.json"
+
+#endif //WATERGATE_TEST_LOCK_TABLE_H

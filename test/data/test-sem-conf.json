@@ -1,0 +1,32 @@
+{
+  "configuration": {
+    "env": {
+      "params": {
+        "app.name": "test-sem-app"
+      },
+      "logging": {
+        "level": "debug",
+        "size": "5M",
+        "max-files": "3",
+        "mode": "debug",
+        "console": "true"
+      }
+    },
+    "control": {
+      "def": {
+        "resource": {
+          "name": "test-dummy-resource",
+          "class": "com::watergate::core::dummy_resource",
+          "max_concurrency": "8"
+        },
+        "priorities": "2"
+      }
+    },
+    "test-lock-client": {
+      "process" : "/work/dev/wookler/watergate/test/cmake/test_lock_client",
+      "process.count": "20",
+      "sleep.time": "30",
+      "lock.tries": "100"
+    }
+  }
+}
