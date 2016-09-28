@@ -29,6 +29,7 @@
 *.app
 
 .idea/
+/**/.vscode/
 *.swp
 
 /**/cmake/
