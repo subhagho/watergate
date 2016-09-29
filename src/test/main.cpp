@@ -4,12 +4,13 @@
 #include <unistd.h>
 #include <iostream>
 #include <thread>
+#include <fstream>
 
 #include "includes/common/common.h"
 #include "includes/common/_env.h"
 #include "includes/core/control_manager.h"
 
-#define CONFIG_FILE "/work/dev/wookler/watergate/test/data/test-sem-conf.json"
+#define CONFIG_FILE "/home/subho/dev/wookler/watergate/test/data/test-sem-conf.json"
 #define CONTROL_DEF_CONFIG_PATH "/configuration/control/def"
 #define LOCK_TABLE_NAME "Test lock-table"
 
@@ -70,6 +71,7 @@ void run(control_client *control, int priority) {
 int main(int, char *[]) {
 
     try {
+
         _env *env = create_env(CONFIG_FILE);
                 REQUIRE(NOT_NULL(env));
 

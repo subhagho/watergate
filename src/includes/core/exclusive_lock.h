@@ -18,7 +18,7 @@
 
 #define LOCK_ERROR(fmt, ...) lock_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 #define LOCK_ERROR_PTR(fmt, ...) new lock_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
-#define EXCLUSIVE_LOCK_PREFIX "/locks/"
+#define EXCLUSIVE_LOCK_PREFIX "/locks::"
 
 #define CHECK_SEMAPHORE_PTR(s, name) do { \
     if (IS_NULL(s) || s == SEM_FAILED) { \
@@ -62,7 +62,7 @@ namespace com {
                 ~exclusive_lock() {
                     if (NOT_NULL(semaphore) && semaphore != SEM_FAILED) {
                         if (sem_close(semaphore) != 0) {
-                            LOG_ERROR("Error closing semaphore. [name=%s][errno=%d]", name, errno);
+                            LOG_ERROR("Error closing semaphore. [name=%s][errno=%s]", name, strerror(errno));
                         }
                         semaphore = nullptr;
                     }
@@ -73,15 +73,15 @@ namespace com {
                     CHECK_SEMAPHORE_PTR(semaphore, name);
                     if (sem_trywait(semaphore) == 0) {
                         if (sem_post(semaphore) != 0) {
-                            lock_error e = LOCK_ERROR("Error releaseing semaphore lock. [name=%s][errno=%d]",
-                                                      name->c_str(), errno);
+                            lock_error e = LOCK_ERROR("Error releaseing semaphore lock. [name=%s][errno=%s]",
+                                                      name->c_str(), strerror(errno));
                             LOG_ERROR(e.what());
                             throw e;
                         }
                     } else {
                         if (sem_post(semaphore) != 0) {
-                            lock_error e = LOCK_ERROR("Error releaseing semaphore lock. [name=%s][errno=%d]",
-                                                      name->c_str(), errno);
+                            lock_error e = LOCK_ERROR("Error releaseing semaphore lock. [name=%s][errno=%s]",
+                                                      name->c_str(), strerror(errno));
                             LOG_ERROR(e.what());
                             throw e;
                         }
@@ -91,7 +91,7 @@ namespace com {
                 void create() {
                     semaphore = sem_open(name->c_str(), O_CREAT, mode, 1);
                     if (IS_NULL(semaphore) || semaphore == SEM_FAILED) {
-                        lock_error e = LOCK_ERROR("Error creating lock. [name=%s][errno=%d]", name->c_str(), errno);
+                        lock_error e = LOCK_ERROR("Error creating lock. [name=%s][errno=%s]", name->c_str(), strerror(errno));
                         LOG_ERROR(e.what());
                         throw e;
                     }

@@ -7,6 +7,8 @@
 #define CATCH_CONFIG_MAIN
 
 #include <iostream>
+#include <wait.h>
+
 #include "../include/catch.hpp"
 #include "includes/common/_env.h"
 #include "includes/core/control_def.h"

@@ -20,4 +20,4 @@ list(REMOVE_ITEM WG_SOURCES "src/test/main.cpp")
 add_library(${WATERGATE_LIB_NAME} SHARED ${WG_INCLUDES} ${WG_SOURCES})
 
 add_executable(main src/test/main.cpp)
-target_link_libraries(main watergate)
+target_link_libraries(main watergate pthread uuid rt)

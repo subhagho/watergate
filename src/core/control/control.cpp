@@ -79,11 +79,11 @@ void com::watergate::core::_semaphore::create(const _app *app, const ConfigValue
 }
 
 void com::watergate::core::_semaphore::create_sem(int index) {
-    string *sem_name = common_utils::format("%s/%s/_%d", CONTROL_LOCK_PREFIX, name->c_str(), index);
+    string *sem_name = common_utils::format("%s::%s::%d", CONTROL_LOCK_PREFIX, name->c_str(), index);
 
     sem_t *ptr = sem_open(sem_name->c_str(), O_CREAT, mode, max_concurrent);
     if (!IS_VALID_SEM_PTR(ptr)) {
-        throw CONTROL_ERROR("Error creating semaphore. [name=%s][errno=%d]", sem_name->c_str(), errno);
+        throw CONTROL_ERROR("Error creating semaphore. [name=%s][errno=%s]", sem_name->c_str(), strerror(errno));
     }
 
     semaphores[index] = ptr;
@@ -94,12 +94,12 @@ void com::watergate::core::_semaphore::delete_sem(int index) {
     if (IS_VALID_SEM_PTR(semaphores[index])) {
         if (!owner) {
             if (sem_close(semaphores[index]) != 0) {
-                LOG_ERROR("Error disposing semaphore. [index=%s][errno=%d]", index, errno);
+                LOG_ERROR("Error disposing semaphore. [index=%s][errno=%s]", index, strerror(errno));
             }
         } else {
-            string *sem_name = common_utils::format("%s/%s/_%d", CONTROL_LOCK_PREFIX, name->c_str(), index);
+            string *sem_name = common_utils::format("%s::%s::%d", CONTROL_LOCK_PREFIX, name->c_str(), index);
             if (sem_unlink(sem_name->c_str()) != 0) {
-                LOG_ERROR("Error disposing semaphore. [index=%s][errno=%d]", index, errno);
+                LOG_ERROR("Error disposing semaphore. [index=%s][errno=%s]", index, strerror(errno));
             }
             CHECK_AND_FREE(sem_name);
         }

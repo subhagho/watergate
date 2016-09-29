@@ -14,9 +14,20 @@ void com::watergate::common::Config::create(string filename) {
     assert(!filename.empty());
 
     try {
-        std::ifstream t(filename);
-        std::string data((std::istreambuf_iterator<char>(t)),
-                         std::istreambuf_iterator<char>());
+        cout << "Opening configuration file. [file=" << filename << "]\n";
+        std::ifstream t(filename, std::ifstream::in);
+        if (!t.is_open()) {
+            throw CONFIG_ERROR("Error opening configuration file. [file=%s][error=%s]", filename.c_str(), strerror(errno));
+        }
+
+        stringstream ss;
+        string line;
+        while(getline(t, line)) {
+            ss << line;
+        }
+        t.close();
+
+        string data(ss.str());
 
         assert(!IS_EMPTY(data));
 
@@ -35,10 +46,14 @@ void com::watergate::common::Config::create(string filename) {
     } catch (exception &e) {
         config_error ce = CONFIG_ERROR("Error initializing configuration. [error=%s]", e.what());
         state.set_error(&ce);
+        cout << "Error creating configuration...\n";
+        cout << "ERROR : " << ce.what() << "\n";
         throw ce;
     } catch (...) {
         config_error e = CONFIG_ERROR("Error creating configuration instance.");
         state.set_error(&e);
+        cout << "Error creating configuration...\n";
+        cout << "ERROR : " << e.what() << "\n";
         throw e;
     }
 }

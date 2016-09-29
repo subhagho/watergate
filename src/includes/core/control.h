@@ -176,9 +176,9 @@ namespace com {
                         sem_t *lock = get(ii);
                         if (IS_VALID_SEM_PTR(lock)) {
                             if (sem_post(lock) != 0) {
-                                throw CONTROL_ERROR("Semaphores in invalid state. [name=%s][priority=%d][errno=%d]",
+                                throw CONTROL_ERROR("Semaphores in invalid state. [name=%s][priority=%d][errno=%s]",
                                                     this->name->c_str(),
-                                                    ii, errno);
+                                                    ii, strerror(errno));
                             }
                         } else {
                             throw CONTROL_ERROR("No lock found for the specified priority. [lock=%s][priority=%d]",
