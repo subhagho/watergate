@@ -208,7 +208,7 @@ namespace com {
                     for (iter = threads.begin(); iter != threads.end(); iter++) {
                         thread_lock_record *rec = iter->second;
                         if (NOT_NULL(rec)) {
-
+                            rec->reset();
                         }
                     }
                 }
