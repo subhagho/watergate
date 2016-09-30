@@ -34,6 +34,10 @@
 
 #define IS_VALID_SEM_PTR(ptr) (NOT_NULL(ptr) && ptr != SEM_FAILED)
 
+#define LOCKED_REGION_START(m) do { \
+    std::lock_guard<std::mutex> guard(m);
+
+#define LOCKED_REGION_END } while(0);
 
 using namespace com::watergate::common;
 

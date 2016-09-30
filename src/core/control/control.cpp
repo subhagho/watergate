@@ -121,37 +121,43 @@ com::watergate::core::_semaphore::~_semaphore() {
 lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority, bool update, double quota) {
     assert(NOT_NULL(semaphores));
 
-    lock_acquire_enum ls = client->check_and_lock(priority, quota);
-    if (ls == Locked) {
-        counts[priority]->count++;
-        thread_lock_record *t_rec = get_thread_lock();
-        if (NOT_NULL(t_rec)) {
-            t_rec->increment(priority);
-        }
-        if (update) {
-            client->update_quota(quota);
-        }
-        return ls;
-    } else if (ls == QuotaReached) {
-        return ls;
-    } else if (ls == Expired) {
-        LOG_DEBUG("Lock expired. [resetting all semaphores]");
-        reset_locks();
-    }
+    LOCKED_REGION_START(sem_lock)
 
-    sem_t *lock = get(priority);
-    if (IS_VALID_SEM_PTR(lock)) {
-        if (sem_trywait(lock) == 0) {
-            LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
+        lock_acquire_enum ls = client->check_and_lock(priority, quota);
+        if (ls == Locked) {
             counts[priority]->count++;
             thread_lock_record *t_rec = get_thread_lock();
             if (NOT_NULL(t_rec)) {
                 t_rec->increment(priority);
             }
             if (update) {
-                client->update_lock(update, priority, quota);
+                client->update_quota(quota);
             }
-            return Locked;
+            return ls;
+        } else if (ls == QuotaReached) {
+            return ls;
+        } else if (ls == Expired) {
+            LOG_DEBUG("Lock expired. [resetting all semaphores]");
+            reset_locks();
+        }
+
+            LOCKED_REGION_END
+
+    sem_t *lock = get(priority);
+    if (IS_VALID_SEM_PTR(lock)) {
+        if (sem_trywait(lock) == 0) {
+            LOCKED_REGION_START(sem_lock)
+                LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
+                counts[priority]->count++;
+                thread_lock_record *t_rec = get_thread_lock();
+                if (NOT_NULL(t_rec)) {
+                    t_rec->increment(priority);
+                }
+                if (update) {
+                    client->update_lock(update, priority, quota);
+                }
+                return Locked;
+                    LOCKED_REGION_END
         } else if (errno == EAGAIN) {
             return Timeout;
         } else {
@@ -167,38 +173,42 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
 lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priority, bool update, double quota) {
     assert(NOT_NULL(semaphores));
 
-    lock_acquire_enum ls = client->check_and_lock(priority, quota);
-    if (ls == Locked) {
-        counts[priority]->count++;
-        thread_lock_record *t_rec = get_thread_lock();
-        if (NOT_NULL(t_rec)) {
-            t_rec->increment(priority);
-        }
-        if (update) {
-            client->update_quota(quota);
-        }
-        return ls;
-    } else if (ls == QuotaReached) {
-        return ls;
-    } else if (ls == Expired) {
-        LOG_DEBUG("Lock expired. [resetting all semaphores]");
-        reset_locks();
-    }
-
-    sem_t *lock = get(priority);
-    if (IS_VALID_SEM_PTR(lock)) {
-        LOG_DEBUG("Waiting for semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
-        if (sem_wait(lock) == 0) {
-            LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
+    LOCKED_REGION_START(sem_lock)
+        lock_acquire_enum ls = client->check_and_lock(priority, quota);
+        if (ls == Locked) {
             counts[priority]->count++;
             thread_lock_record *t_rec = get_thread_lock();
             if (NOT_NULL(t_rec)) {
                 t_rec->increment(priority);
             }
             if (update) {
-                client->update_lock(update, priority, quota);
+                client->update_quota(quota);
             }
-            return Locked;
+            return ls;
+        } else if (ls == QuotaReached) {
+            return ls;
+        } else if (ls == Expired) {
+            LOG_DEBUG("Lock expired. [resetting all semaphores]");
+            reset_locks();
+        }
+            LOCKED_REGION_END
+
+    sem_t *lock = get(priority);
+    if (IS_VALID_SEM_PTR(lock)) {
+        LOG_DEBUG("Waiting for semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
+        if (sem_wait(lock) == 0) {
+            LOCKED_REGION_START(sem_lock)
+                LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
+                counts[priority]->count++;
+                thread_lock_record *t_rec = get_thread_lock();
+                if (NOT_NULL(t_rec)) {
+                    t_rec->increment(priority);
+                }
+                if (update) {
+                    client->update_lock(update, priority, quota);
+                }
+                return Locked;
+                    LOCKED_REGION_END
         } else {
             LOG_DEBUG("Failed to acquire semaphore. [name=%s][priority=%d][error=%s]", this->name->c_str(), priority,
                       strerror(errno));
@@ -212,40 +222,42 @@ lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priorit
 bool com::watergate::core::_semaphore_client::release_lock(int priority) {
     assert(NOT_NULL(semaphores));
 
-    lock_acquire_enum ls = client->has_valid_lock(priority);
-    if (ls == Locked) {
-        counts[priority]->count--;
-        thread_lock_record *t_rec = get_thread_lock();
-        if (NOT_NULL(t_rec)) {
-            t_rec->decremet(priority);
-        }
-        int count = counts[priority]->count;
-        if (count <= 0) {
-
-            sem_t *lock = get(priority);
-            if (IS_VALID_SEM_PTR(lock)) {
-                if (sem_post(lock) != 0) {
-                    throw CONTROL_ERROR("Semaphores in invalid state. [name=%s][priority=%d][errno=%d]",
-                                        this->name->c_str(),
-                                        priority, errno);
-                }
-                LOG_DEBUG("Released semaphore [name=%s][priority=%d]", this->name->c_str(),
-                          priority);
-
-                client->release_lock(ls, priority);
-            } else {
-                throw CONTROL_ERROR("No semaphore found for the specified priority. [lock=%s][priority=%d]",
-                                    this->name->c_str(),
-                                    priority);
+    LOCKED_REGION_START(sem_lock)
+        lock_acquire_enum ls = client->has_valid_lock(priority);
+        if (ls == Locked) {
+            counts[priority]->count--;
+            thread_lock_record *t_rec = get_thread_lock();
+            if (NOT_NULL(t_rec)) {
+                t_rec->decremet(priority);
             }
+            int count = counts[priority]->count;
+            if (count <= 0) {
+
+                sem_t *lock = get(priority);
+                if (IS_VALID_SEM_PTR(lock)) {
+                    if (sem_post(lock) != 0) {
+                        throw CONTROL_ERROR("Semaphores in invalid state. [name=%s][priority=%d][errno=%d]",
+                                            this->name->c_str(),
+                                            priority, errno);
+                    }
+                    LOG_DEBUG("Released semaphore [name=%s][priority=%d]", this->name->c_str(),
+                              priority);
+
+                    client->release_lock(ls, priority);
+                } else {
+                    throw CONTROL_ERROR("No semaphore found for the specified priority. [lock=%s][priority=%d]",
+                                        this->name->c_str(),
+                                        priority);
+                }
+            }
+            return true;
+        } else if (ls == Expired) {
+            LOG_DEBUG("Lock expired. [resetting all semaphores]");
+            reset_locks();
+        } else {
+            LOG_DEBUG("Lock already released. [state=%d]", ls);
         }
-        return true;
-    } else if (ls == Expired) {
-        LOG_DEBUG("Lock expired. [resetting all semaphores]");
-        reset_locks();
-    } else {
-        LOG_DEBUG("Lock already released. [state=%d]", ls);
-    }
+            LOCKED_REGION_END
     return false;
 }
 

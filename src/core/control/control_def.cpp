@@ -7,7 +7,6 @@
 
 using namespace com::watergate::core;
 
-#define LOCKED_REGION(m) std::lock_guard<std::mutex> guard(m)
 
 void com::watergate::core::control_def::create(const _app *app, const ConfigValue *config, bool server) {
     try {
@@ -66,7 +65,6 @@ lock_acquire_enum com::watergate::core::control_client::try_lock(string name, in
         throw CONTROL_ERROR("No registered lock with specified name. [name=%s]", name.c_str());
     }
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
-    LOCKED_REGION(sem_c->sem_lock);
 
     return sem_c->try_lock(priority, update, quota);
 }
@@ -81,7 +79,6 @@ com::watergate::core::control_client::wait_lock(string name, int priority, doubl
     }
 
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
-    LOCKED_REGION(sem_c->sem_lock);
 
     return sem_c->wait_lock(priority, update, quota);
 }
@@ -95,7 +92,6 @@ bool com::watergate::core::control_client::release_lock(string name, int priorit
     }
 
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
-    LOCKED_REGION(sem_c->sem_lock);
 
     return sem_c->release_lock(priority);
 }
@@ -146,11 +142,13 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
     }
 
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
-    LOCKED_REGION(sem_c->sem_lock);
+    LOCKED_REGION_START(sem_c->sem_lock)
 
-    t.stop();
-    long ts = t.get_elapsed();
-    sem_c->update_metrics(priority, ts);
+        t.stop();
+        long ts = t.get_elapsed();
+        sem_c->update_metrics(priority, ts);
+            LOCKED_REGION_END;
+
     return ret;
 }
 
