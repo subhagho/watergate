@@ -7,7 +7,10 @@
 #define CATCH_CONFIG_MAIN
 
 #include <iostream>
+
+#ifndef __APPLE__
 #include <wait.h>
+#endif
 
 #include "../include/catch.hpp"
 #include "includes/common/_env.h"

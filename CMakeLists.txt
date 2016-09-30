@@ -19,5 +19,13 @@ list(REMOVE_ITEM WG_SOURCES "src/test/main.cpp")
 
 add_library(${WATERGATE_LIB_NAME} SHARED ${WG_INCLUDES} ${WG_SOURCES})
 
+set(WG_LIBRARIES)
+if (APPLE)
+    set(WG_LIBRARIES)
+elseif (UNIX && !APPLE)
+    set(WG_LIBRARIES pthread uuid rt)
+endif ()
+
 add_executable(main src/test/main.cpp)
-target_link_libraries(main watergate pthread uuid rt)
+target_link_libraries(main watergate ${WG_LIBRARIES})
+

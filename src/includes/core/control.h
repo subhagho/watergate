@@ -52,9 +52,10 @@ namespace com {
                 }
             };
 
-            class _lock_count {
+            class _lock_counter {
             public:
                 int priority;
+                mutex priority_lock;
                 atomic<int> count;
             };
 
@@ -162,7 +163,7 @@ namespace com {
             class _semaphore_client : public _semaphore {
             private:
                 lock_table_client *client;
-                vector<_lock_count *> counts;
+                vector<_lock_counter *> counts;
                 unordered_map<string, thread_lock_record *> threads;
 
 
@@ -249,7 +250,7 @@ namespace com {
                     create(app, config, false);
 
                     for (int ii = 0; ii < priorities; ii++) {
-                        _lock_count *lc = new _lock_count();
+                        _lock_counter *lc = new _lock_counter();
                         counts.push_back(lc);
                         counts[ii]->priority = ii;
                         counts[ii]->count = 0;

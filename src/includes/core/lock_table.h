@@ -242,11 +242,12 @@ namespace com {
                     CHECK_STATE_AVAILABLE(state);
 
                     if (update) {
-                        if (lock_record->lock.lock_priority < priority) {
-                            lock_record->lock.lock_priority = priority;
-                        }
                         lock_record->lock.has_lock = true;
                         lock_record->lock.acquired_time = time_utils::now();
+                    }
+                    if (lock_record->lock.lock_priority < priority) {
+                        lock_record->lock.lock_priority = priority;
+                        LOG_DEBUG("Current lock priority level = %d", lock_record->lock.lock_priority);
                     }
                 }
 
@@ -263,6 +264,7 @@ namespace com {
                         } else {
                             if (lock_record->lock.lock_priority >= priority) {
                                 lock_record->lock.lock_priority = priority - 1;
+                                LOG_DEBUG("Current lock priority level = %d", lock_record->lock.lock_priority);
                             }
                         }
                     }

@@ -84,7 +84,9 @@ namespace com {
                                 _t.time_since_epoch()
                         );
                         milliseconds d = nt - ot;
-                        return elapsed + d.count();
+                        long e = elapsed + d.count();
+
+                        return e;
                     }
                     return elapsed;
                 }

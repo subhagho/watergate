@@ -121,6 +121,7 @@ com::watergate::core::_semaphore::~_semaphore() {
 lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority, bool update, double quota) {
     assert(NOT_NULL(semaphores));
 
+    std::lock_guard<std::mutex> guard(counts[priority]->priority_lock);
     LOCKED_REGION_START(sem_lock)
 
         lock_acquire_enum ls = client->check_and_lock(priority, quota);
@@ -156,9 +157,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
                 if (NOT_NULL(t_rec)) {
                     t_rec->increment(priority);
                 }
-                if (update) {
-                    client->update_lock(update, priority);
-                }
+                client->update_lock(update, priority);
                     LOCKED_REGION_END
             return Locked;
         } else if (errno == EAGAIN) {
@@ -175,6 +174,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
 
 lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priority, bool update, double quota) {
     assert(NOT_NULL(semaphores));
+    std::lock_guard<std::mutex> guard(counts[priority]->priority_lock);
 
     LOCKED_REGION_START(sem_lock)
         lock_acquire_enum ls = client->check_and_lock(priority, quota);
@@ -202,7 +202,6 @@ lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priorit
     sem_t *lock = get(priority);
     if (IS_VALID_SEM_PTR(lock)) {
         LOG_DEBUG("Waiting for semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
-        dump();
         if (sem_wait(lock) == 0) {
             LOCKED_REGION_START(sem_lock)
                 LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
@@ -211,9 +210,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priorit
                 if (NOT_NULL(t_rec)) {
                     t_rec->increment(priority);
                 }
-                if (update) {
-                    client->update_lock(update, priority);
-                }
+                client->update_lock(update, priority);
                     LOCKED_REGION_END
             return Locked;
         } else {
@@ -229,6 +226,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priorit
 bool com::watergate::core::_semaphore_client::release_lock(int priority) {
     assert(NOT_NULL(semaphores));
 
+    std::lock_guard<std::mutex> guard(counts[priority]->priority_lock);
     LOCKED_REGION_START(sem_lock)
         lock_acquire_enum ls = client->has_valid_lock(priority);
         if (ls == Locked) {

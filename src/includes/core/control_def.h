@@ -19,6 +19,7 @@
 
 #define DEFAULT_MAX_TIMEOUT 30 * 1000
 #define DEFAULT_LOCK_LOOP_SLEEP_TIME 10
+#define DEFAULT_TRY_SLEEP_TIME 2 * 1000
 
 namespace com {
     namespace watergate {
@@ -88,6 +89,7 @@ namespace com {
                         if (ret != QuotaReached) {
                             break;
                         }
+                        usleep(DEFAULT_TRY_SLEEP_TIME);
                         if (t.get_current_elapsed() > timeout && (priority != 0)) {
                             release_lock(name, priority);
                             *err = ERR_CORE_CONTROL_TIMEOUT;
