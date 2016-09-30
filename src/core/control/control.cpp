@@ -147,6 +147,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
 
     sem_t *lock = get(priority);
     if (IS_VALID_SEM_PTR(lock)) {
+        LOG_DEBUG("Trying for semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
         if (sem_trywait(lock) == 0) {
             LOCKED_REGION_START(sem_lock)
                 LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
@@ -201,6 +202,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priorit
     sem_t *lock = get(priority);
     if (IS_VALID_SEM_PTR(lock)) {
         LOG_DEBUG("Waiting for semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
+        dump();
         if (sem_wait(lock) == 0) {
             LOCKED_REGION_START(sem_lock)
                 LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
