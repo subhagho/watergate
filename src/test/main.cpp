@@ -38,7 +38,7 @@ void run(control_client *control, int priority) {
         for (int ii = 0; ii < 8; ii++) {
             int err = 0;
             while (true) {
-                lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, &err);
+                lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, 5000, &err);
                 if (r == Locked && err == 0) {
                     LOG_INFO("Successfully acquired lock [thread=%s][name=%s][priority=%d][try=%d]", tid.c_str(),
                              CONTROL_NAME, priority,
