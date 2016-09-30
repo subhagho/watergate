@@ -237,9 +237,11 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority) {
             if (NOT_NULL(t_rec)) {
                 t_rec->decremet(priority);
             }
-            int count = counts[priority]->count;
+            int count = 0;
+            for (int ii = priority; ii < priorities; ii++) {
+                count += counts[ii]->count;
+            }
             if (count <= 0) {
-
                 sem_t *lock = get(priority);
                 if (IS_VALID_SEM_PTR(lock)) {
                     if (sem_post(lock) != 0) {
