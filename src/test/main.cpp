@@ -37,6 +37,7 @@ void run(control_client *control, int priority) {
         int count = 0;
         for (int ii = 0; ii < 8; ii++) {
             int err = 0;
+            int retry_count = 0;
             while (true) {
                 lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, 5000, &err);
                 if (r == Locked && err == 0) {
@@ -58,6 +59,11 @@ void run(control_client *control, int priority) {
                     LOG_ERROR("Filed to acquired lock [thread=%s][name=%s][priority=%d][try=%d][response=%d]",
                               tid.c_str(),
                               CONTROL_NAME, priority, ii, r);
+                retry_count++;
+
+                if (retry_count > 10) {
+                    throw BASE_ERROR("Exceeded max retry count. [thread=%s][priority=%d]", tid, priority);
+                }
             }
         }
 
