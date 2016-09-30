@@ -142,6 +142,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
     sem_t *lock = get(priority);
     if (IS_VALID_SEM_PTR(lock)) {
         if (sem_trywait(lock) == 0) {
+            LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
             counts[priority]->count++;
             thread_lock_record *t_rec = get_thread_lock();
             if (NOT_NULL(t_rec)) {
