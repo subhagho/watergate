@@ -20,9 +20,9 @@ list(REMOVE_ITEM WG_SOURCES "src/test/main.cpp")
 add_library(${WATERGATE_LIB_NAME} SHARED ${WG_INCLUDES} ${WG_SOURCES})
 
 set(WG_LIBRARIES)
-if (APPLE)
+if (${APPLE})
     set(WG_LIBRARIES)
-elseif (UNIX && !APPLE)
+elseif (${UNIX} AND !${APPLE})
     set(WG_LIBRARIES pthread uuid rt)
 endif ()
 
