@@ -232,14 +232,13 @@ namespace com {
                             if (aq < quota) {
                                 return QuotaReached;
                             }
-
                         }
                         return ls;
                     }
                     return ls;
                 }
 
-                void update_lock(bool update, int priority, double quota) {
+                void update_lock(bool update, int priority) {
                     CHECK_STATE_AVAILABLE(state);
 
                     if (update) {
@@ -248,8 +247,6 @@ namespace com {
                         }
                         lock_record->lock.has_lock = true;
                         lock_record->lock.acquired_time = time_utils::now();
-                        lock_record->lock.quota_used += quota;
-                        lock_record->lock.quota_total += quota;
                     }
                 }
 

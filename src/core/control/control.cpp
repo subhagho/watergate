@@ -140,7 +140,9 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
             LOG_DEBUG("Lock expired. [resetting all semaphores]");
             reset_locks();
         }
-
+        if (update) {
+            client->update_quota(quota);
+        }
             LOCKED_REGION_END
 
     sem_t *lock = get(priority);
@@ -154,10 +156,10 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
                     t_rec->increment(priority);
                 }
                 if (update) {
-                    client->update_lock(update, priority, quota);
+                    client->update_lock(update, priority);
                 }
-                return Locked;
                     LOCKED_REGION_END
+            return Locked;
         } else if (errno == EAGAIN) {
             return Timeout;
         } else {
@@ -191,6 +193,9 @@ lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priorit
             LOG_DEBUG("Lock expired. [resetting all semaphores]");
             reset_locks();
         }
+        if (update) {
+            client->update_quota(quota);
+        }
             LOCKED_REGION_END
 
     sem_t *lock = get(priority);
@@ -205,10 +210,10 @@ lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priorit
                     t_rec->increment(priority);
                 }
                 if (update) {
-                    client->update_lock(update, priority, quota);
+                    client->update_lock(update, priority);
                 }
-                return Locked;
                     LOCKED_REGION_END
+            return Locked;
         } else {
             LOG_DEBUG("Failed to acquire semaphore. [name=%s][priority=%d][error=%s]", this->name->c_str(), priority,
                       strerror(errno));

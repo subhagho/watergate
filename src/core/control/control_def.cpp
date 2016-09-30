@@ -142,10 +142,10 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
     }
 
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
-    LOCKED_REGION_START(sem_c->sem_lock)
 
-        t.stop();
-        long ts = t.get_elapsed();
+    t.stop();
+    long ts = t.get_elapsed();
+    LOCKED_REGION_START(sem_c->sem_lock)
         sem_c->update_metrics(priority, ts);
             LOCKED_REGION_END;
 

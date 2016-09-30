@@ -90,7 +90,7 @@ int main(int, char *[]) {
         int t_count = 5;
         thread *threads[t_count];
         for (int ii = 0; ii < t_count; ii++) {
-            thread *t = new thread(run, control, ii % 2);
+            thread *t = new thread(run, control, (ii + 1) % 2);
             threads[ii] = t;
         }
         control->dump();
