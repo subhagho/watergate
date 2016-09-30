@@ -175,7 +175,7 @@ namespace com {
                     for (int ii = 0; ii <= max_priority; ii++) {
                         sem_t *lock = get(ii);
                         if (IS_VALID_SEM_PTR(lock)) {
-                            LOG_DEBUG("Force releaseing lock [name=%s][priority=%d]", this->name->c_str(), ii);
+                            LOG_DEBUG("Force releasing lock [name=%s][priority=%d]", this->name->c_str(), ii);
                             if (sem_post(lock) != 0) {
                                 throw CONTROL_ERROR("Semaphores in invalid state. [name=%s][priority=%d][errno=%s]",
                                                     this->name->c_str(),

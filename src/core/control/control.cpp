@@ -185,6 +185,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priorit
     sem_t *lock = get(priority);
     if (IS_VALID_SEM_PTR(lock)) {
         if (sem_wait(lock) == 0) {
+            LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
             counts[priority]->count++;
             thread_lock_record *t_rec = get_thread_lock();
             if (NOT_NULL(t_rec)) {
@@ -218,8 +219,7 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority) {
         }
 
         if (count <= 0) {
-            LOG_DEBUG("Releasing lock [name=%s][priority=%d]", this->name->c_str(),
-                      priority);
+
             sem_t *lock = get(priority);
             if (IS_VALID_SEM_PTR(lock)) {
                 if (sem_post(lock) != 0) {
@@ -227,12 +227,14 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority) {
                                         this->name->c_str(),
                                         priority, errno);
                 }
+                LOG_DEBUG("Released semaphore [name=%s][priority=%d]", this->name->c_str(),
+                          priority);
                 for (int ii = 0; ii < priorities; ii++) {
                     counts[ii]->count = 0;
                 }
                 client->release_lock(ls);
             } else {
-                throw CONTROL_ERROR("No lock found for the specified priority. [lock=%s][priority=%d]",
+                throw CONTROL_ERROR("No semaphore found for the specified priority. [lock=%s][priority=%d]",
                                     this->name->c_str(),
                                     priority);
             }
