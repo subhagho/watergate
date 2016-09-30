@@ -7,6 +7,7 @@
 #include <time.h>
 #include <regex>
 #include <iostream>
+#include <sys/dtrace.h>
 
 #include "json11/json.h"
 
@@ -150,7 +151,7 @@ namespace com {
                     }
                 }
 
-                virtual const ConfigValue *find(vector<string> path, int offset) const = 0;
+                virtual const ConfigValue *find(vector<string> path, uint_t offset) const = 0;
 
                 virtual const void print(string offset) const = 0;
             };
@@ -247,7 +248,7 @@ namespace com {
                     return get_time_value(DEFAULT_DATETIME_FORMAT, def_value);
                 }
 
-                const ConfigValue *find(vector<string> path, int offset) const override {
+                const ConfigValue *find(vector<string> path, uint_t offset) const override {
                     string key = path[offset];
                     if (offset == path.size() - 1) {
                         if (this->get_key() == key) {
@@ -392,7 +393,7 @@ namespace com {
                     return get_time(key, DEFAULT_DATETIME_FORMAT, def_value);
                 }
 
-                const ConfigValue *find(vector<string> path, int offset) const override {
+                const ConfigValue *find(vector<string> path, uint_t offset) const override {
                     if (offset == path.size() - 1) {
                         string *key = parse_key_name(path[offset]);
                         if (this->get_key() == *key) {
@@ -456,7 +457,7 @@ namespace com {
                     return this->values;
                 }
 
-                const ConfigValue *find(vector<string> path, int offset) const override {
+                const ConfigValue *find(vector<string> path, uint_t offset) const override {
                     string *key = parse_key_name(path[offset]);
                     if (get_key() == *key) {
                         if (offset == path.size() - 1) {
@@ -546,7 +547,7 @@ namespace com {
                     }
                 }
 
-                const ConfigValue *find(vector<string> path, int offset) const override {
+                const ConfigValue *find(vector<string> path, uint_t offset) const override {
                     string *key = parse_key_name(path[offset]);
                     if (get_key() == *key) {
                         if (offset == path.size() - 1) {

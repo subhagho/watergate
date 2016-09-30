@@ -177,6 +177,10 @@ namespace com {
                 }
 
 
+                int get_lock_priority() {
+                    return lock_record->lock.lock_priority;
+                }
+
                 _lock_record *new_record(string app_name, string app_id, pid_t pid) {
                     CHECK_STATE_AVAILABLE(state);
 
@@ -199,14 +203,15 @@ namespace com {
                     return create_new_record(app_name, app_id, pid);
                 }
 
-                lock_acquire_enum has_valid_lock() {
+                lock_acquire_enum has_valid_lock(int priority) {
                     CHECK_STATE_AVAILABLE(state);
 
                     if (lock_record->lock.has_lock) {
                         if (!is_lock_active()) {
                             return Expired;
                         } else {
-                            return Locked;
+                            if (priority <= lock_record->lock.lock_priority)
+                                return Locked;
                         }
                     }
                     return None;
@@ -216,19 +221,18 @@ namespace com {
                     CHECK_STATE_AVAILABLE(state);
 
                     lock_record->app.last_active_ts = time_utils::now();
-                    lock_acquire_enum ls = has_valid_lock();
+                    lock_acquire_enum ls = has_valid_lock(priority);
                     if (ls == Expired) {
-                        release_lock(ls);
+                        release_lock(ls, priority);
                         return ls;
                     } else if (ls == Locked) {
                         double q = get_quota();
                         if (q > 0) {
                             double aq = q - lock_record->lock.quota_used;
-                            if (aq >= quota) {
-                                lock_record->lock.quota_used += quota;
-                            } else {
+                            if (aq < quota) {
                                 return QuotaReached;
                             }
+
                         }
                         return ls;
                     }
@@ -239,12 +243,14 @@ namespace com {
                     CHECK_STATE_AVAILABLE(state);
 
                     if (update) {
-                        lock_record->lock.lock_priority = priority;
+                        if (lock_record->lock.lock_priority < priority) {
+                            lock_record->lock.lock_priority = priority;
+                        }
                         lock_record->lock.has_lock = true;
                         lock_record->lock.acquired_time = time_utils::now();
                         lock_record->lock.quota_used += quota;
+                        lock_record->lock.quota_total += quota;
                     }
-                    lock_record->lock.quota_total += quota;
                 }
 
                 void update_quota(double quota) {
@@ -252,11 +258,15 @@ namespace com {
                     lock_record->lock.quota_total += quota;
                 }
 
-                void release_lock(lock_acquire_enum lock_state) {
+                void release_lock(lock_acquire_enum lock_state, int priority) {
                     CHECK_STATE_AVAILABLE(state);
-                    if (lock_record->lock.has_lock) {
-                        if (lock_state == Expired || lock_state == Locked) {
+                    if (lock_state == Expired || lock_state == Locked) {
+                        if (lock_record->lock.has_lock && priority == 0) {
                             RELEASE_LOCK_RECORD(lock_record);
+                        } else {
+                            if (lock_record->lock.lock_priority >= priority) {
+                                lock_record->lock.lock_priority = priority - 1;
+                            }
                         }
                     }
                 }

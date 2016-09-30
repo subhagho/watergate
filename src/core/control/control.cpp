@@ -155,6 +155,8 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
         } else if (errno == EAGAIN) {
             return Timeout;
         } else {
+            LOG_DEBUG("Failed to acquire semaphore. [name=%s][priority=%d][error=%s]", this->name->c_str(), priority,
+                      strerror(errno));
             return Error;
         }
     }
@@ -197,6 +199,8 @@ lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priorit
             }
             return Locked;
         } else {
+            LOG_DEBUG("Failed to acquire semaphore. [name=%s][priority=%d][error=%s]", this->name->c_str(), priority,
+                      strerror(errno));
             return Error;
         }
     }
@@ -207,18 +211,14 @@ lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priorit
 bool com::watergate::core::_semaphore_client::release_lock(int priority) {
     assert(NOT_NULL(semaphores));
 
-    lock_acquire_enum ls = client->has_valid_lock();
+    lock_acquire_enum ls = client->has_valid_lock(priority);
     if (ls == Locked) {
         counts[priority]->count--;
         thread_lock_record *t_rec = get_thread_lock();
         if (NOT_NULL(t_rec)) {
             t_rec->decremet(priority);
         }
-        int count = 0;
-        for (int ii = 0; ii < priorities; ii++) {
-            count += counts[ii]->count;
-        }
-
+        int count = counts[priority]->count;
         if (count <= 0) {
 
             sem_t *lock = get(priority);
@@ -230,10 +230,8 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority) {
                 }
                 LOG_DEBUG("Released semaphore [name=%s][priority=%d]", this->name->c_str(),
                           priority);
-                for (int ii = 0; ii < priorities; ii++) {
-                    counts[ii]->count = 0;
-                }
-                client->release_lock(ls);
+
+                client->release_lock(ls, priority);
             } else {
                 throw CONTROL_ERROR("No semaphore found for the specified priority. [lock=%s][priority=%d]",
                                     this->name->c_str(),

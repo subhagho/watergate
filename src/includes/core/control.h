@@ -170,9 +170,14 @@ namespace com {
                         }
                         counts[ii]->count = 0;
                     }
+                    if (max_priority != client->get_lock_priority()) {
+                        LOG_ERROR("Lock cache corrupted. [max priority=%d][lock priority=%d]", max_priority,
+                                  client->get_lock_priority());
+                    }
+
                     reset_thread_locks();
-                    client->release_lock(Expired);
                     for (int ii = 0; ii <= max_priority; ii++) {
+                        client->release_lock(Expired, ii);
                         sem_t *lock = get(ii);
                         if (IS_VALID_SEM_PTR(lock)) {
                             LOG_DEBUG("Force Released semaphore [name=%s][priority=%d]", this->name->c_str(), ii);

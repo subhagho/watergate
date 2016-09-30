@@ -34,7 +34,6 @@ typedef struct {
 
 typedef struct {
     bool has_lock;
-    int base_priority;
     int lock_priority;
     long acquired_time;
     double quota_used;
