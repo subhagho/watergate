@@ -70,7 +70,7 @@ namespace com {
         namespace core {
 
             enum lock_acquire_enum {
-                Locked = 0, Expired, Timeout, QuotaReached, Ignore, Error, None
+                Locked = 0, Expired, Timeout, QuotaReached, Ignore, Locking, Error, None
             };
 
             class thread_lock_record {

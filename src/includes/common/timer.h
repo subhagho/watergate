@@ -17,7 +17,7 @@ namespace com {
         namespace common {
             class time_utils {
             public:
-                static long now() {
+                static uint64_t now() {
                     milliseconds nt = duration_cast<milliseconds>(
                             system_clock::now().time_since_epoch()
                     );
@@ -35,7 +35,7 @@ namespace com {
             class timer {
             private:
                 time_point<system_clock> _t = system_clock::now().min();
-                long elapsed = 0;
+                uint64_t elapsed = 0;
 
             public:
                 void start() {
@@ -75,7 +75,7 @@ namespace com {
                     _t = system_clock::now();
                 }
 
-                long get_current_elapsed() {
+                uint64_t get_current_elapsed() {
                     if (_t > system_clock::now().min()) {
                         milliseconds nt = duration_cast<milliseconds>(
                                 system_clock::now().time_since_epoch()
@@ -84,14 +84,14 @@ namespace com {
                                 _t.time_since_epoch()
                         );
                         milliseconds d = nt - ot;
-                        long e = elapsed + d.count();
+                        uint64_t e = elapsed + d.count();
 
                         return e;
                     }
                     return elapsed;
                 }
 
-                long get_elapsed() {
+                uint64_t get_elapsed() {
                     return elapsed;
                 }
             };

@@ -113,7 +113,7 @@ namespace com {
                     return ptr->quota;
                 }
 
-                long get_lock_lease_time() {
+                uint64_t get_lock_lease_time() {
                     CHECK_STATE_AVAILABLE(state);
                     _lock_table *ptr = (_lock_table *) mem_ptr;
 
@@ -140,7 +140,6 @@ namespace com {
             class lock_table_client : public lock_table {
             private:
                 _lock_record *lock_record;
-
 
                 bool is_lock_active() {
                     if (lock_record->lock.has_lock) {
@@ -216,6 +215,7 @@ namespace com {
                     }
                     return None;
                 }
+
 
                 lock_acquire_enum check_and_lock(int priority, double quota) {
                     CHECK_STATE_AVAILABLE(state);

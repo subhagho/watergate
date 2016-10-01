@@ -57,7 +57,7 @@ com::watergate::core::control_def::~control_def() {
     }
 }
 
-lock_acquire_enum com::watergate::core::control_client::try_lock(string name, int priority, double quota, bool update) {
+lock_acquire_enum com::watergate::core::control_client::try_lock(string name, int priority, double quota) {
     CHECK_STATE_AVAILABLE(state);
 
     _semaphore *sem = get_lock(name);
@@ -66,11 +66,14 @@ lock_acquire_enum com::watergate::core::control_client::try_lock(string name, in
     }
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
 
-    return sem_c->try_lock(priority, update, quota);
+    if (IS_BASE_PRIORITY(priority))
+        return sem_c->try_lock_0(quota);
+    else
+        return sem_c->try_lock(priority);
 }
 
 lock_acquire_enum
-com::watergate::core::control_client::wait_lock(string name, int priority, double quota, bool update) {
+com::watergate::core::control_client::wait_lock(string name, int priority, double quota) {
     CHECK_STATE_AVAILABLE(state);
 
     _semaphore *sem = get_lock(name);
@@ -80,7 +83,10 @@ com::watergate::core::control_client::wait_lock(string name, int priority, doubl
 
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
 
-    return sem_c->wait_lock(priority, update, quota);
+    if (IS_BASE_PRIORITY(priority))
+        return sem_c->wait_lock_0(quota);
+    else
+        return sem_c->wait_lock(priority);
 }
 
 bool com::watergate::core::control_client::release_lock(string name, int priority) {
@@ -102,8 +108,7 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
     timer t;
     t.start();
 
-    bool update = (priority == 0);
-    lock_acquire_enum ret = wait_lock(name, priority, quota, update);
+    lock_acquire_enum ret = wait_lock(name, priority, quota);
     if (ret == Error) {
         throw CONTROL_ERROR("Error acquiring base lock. [name=%s]", name.c_str());
     } else if (ret == QuotaReached) {
@@ -117,7 +122,6 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
 
     com::watergate::common::alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
     for (int ii = priority - 1; ii >= 0; ii--) {
-        update = (ii == 0);
         while (true) {
             if (t.get_current_elapsed() > timeout) {
                 for (int jj = ii - 1; jj >= 0; jj--) {
@@ -127,11 +131,13 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
                 return Timeout;
             }
 
-            ret = this->try_lock(name, ii, quota, update);
+            ret = this->try_lock(name, ii, quota);
             if (ret == Locked) {
                 break;
             } else {
-                a.start();
+                if (!a.start()) {
+                    break;
+                }
             }
         }
     }

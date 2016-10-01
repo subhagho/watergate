@@ -118,50 +118,39 @@ com::watergate::core::_semaphore::~_semaphore() {
     CHECK_AND_FREE(table);
 }
 
-lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority, bool update, double quota) {
+lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority) {
     assert(NOT_NULL(semaphores));
-
     std::lock_guard<std::mutex> guard(counts[priority]->priority_lock);
-    LOCKED_REGION_START(sem_lock)
 
-        lock_acquire_enum ls = client->check_and_lock(priority, quota);
-        if (ls == Locked) {
+    lock_acquire_enum ls = check_lock_state(priority);
+    if (ls == Locked) {
+        counts[priority]->count++;
+        thread_lock_record *t_rec = get_thread_lock();
+        if (NOT_NULL(t_rec)) {
+            t_rec->increment(priority);
+        }
+
+        return ls;
+    } else if (ls == QuotaReached) {
+        return ls;
+    } else if (ls == Expired) {
+        LOG_DEBUG("Lock expired. [resetting all semaphores]");
+        reset_locks();
+    }
+
+    sem_t *lock = get(priority);
+    if (IS_VALID_SEM_PTR(lock)) {
+        LOG_DEBUG("Waiting for semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
+        if (sem_trywait(lock) == 0) {
+            LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
             counts[priority]->count++;
+            counts[priority]->acquired_time = time_utils::now();
+            counts[priority]->has_lock = true;
             thread_lock_record *t_rec = get_thread_lock();
             if (NOT_NULL(t_rec)) {
                 t_rec->increment(priority);
             }
-            if (update) {
-                client->update_quota(quota);
-            }
-            return ls;
-        } else if (ls == QuotaReached) {
-            return ls;
-        } else if (ls == Expired) {
-            LOG_DEBUG("Lock expired. [resetting all semaphores]");
-            reset_locks();
-        }
-        if (update) {
-            client->update_quota(quota);
-        }
-            LOCKED_REGION_END
-
-    sem_t *lock = get(priority);
-    if (IS_VALID_SEM_PTR(lock)) {
-        LOG_DEBUG("Trying for semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
-        if (sem_trywait(lock) == 0) {
-            LOCKED_REGION_START(sem_lock)
-                LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
-                counts[priority]->count++;
-                thread_lock_record *t_rec = get_thread_lock();
-                if (NOT_NULL(t_rec)) {
-                    t_rec->increment(priority);
-                }
-                client->update_lock(update, priority);
-                    LOCKED_REGION_END
             return Locked;
-        } else if (errno == EAGAIN) {
-            return Timeout;
         } else {
             LOG_DEBUG("Failed to acquire semaphore. [name=%s][priority=%d][error=%s]", this->name->c_str(), priority,
                       strerror(errno));
@@ -172,21 +161,20 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
                         priority);
 }
 
-lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priority, bool update, double quota) {
+lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_0(double quota) {
     assert(NOT_NULL(semaphores));
-    std::lock_guard<std::mutex> guard(counts[priority]->priority_lock);
 
+    std::lock_guard<std::mutex> guard(counts[BASE_PRIORITY]->priority_lock);
     LOCKED_REGION_START(sem_lock)
-        lock_acquire_enum ls = client->check_and_lock(priority, quota);
+
+        lock_acquire_enum ls = client->check_and_lock(BASE_PRIORITY, quota);
         if (ls == Locked) {
-            counts[priority]->count++;
+            counts[BASE_PRIORITY]->count++;
             thread_lock_record *t_rec = get_thread_lock();
             if (NOT_NULL(t_rec)) {
-                t_rec->increment(priority);
+                t_rec->increment(BASE_PRIORITY);
             }
-            if (update) {
-                client->update_quota(quota);
-            }
+            client->update_quota(quota);
             return ls;
         } else if (ls == QuotaReached) {
             return ls;
@@ -194,24 +182,70 @@ lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priorit
             LOG_DEBUG("Lock expired. [resetting all semaphores]");
             reset_locks();
         }
-        if (update) {
-            client->update_quota(quota);
-        }
+        client->update_quota(quota);
             LOCKED_REGION_END
+
+    sem_t *lock = get(BASE_PRIORITY);
+    if (IS_VALID_SEM_PTR(lock)) {
+        LOG_DEBUG("Trying for semaphore. [name=%s][priority=%d]", this->name->c_str(), BASE_PRIORITY);
+        if (sem_trywait(lock) == 0) {
+            LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d]", this->name->c_str(), BASE_PRIORITY);
+            counts[BASE_PRIORITY]->count++;
+            counts[BASE_PRIORITY]->acquired_time = time_utils::now();
+            counts[BASE_PRIORITY]->has_lock = true;
+            thread_lock_record *t_rec = get_thread_lock();
+            if (NOT_NULL(t_rec)) {
+                t_rec->increment(BASE_PRIORITY);
+            }
+            LOCKED_REGION_START(sem_lock)
+                client->update_lock(true, BASE_PRIORITY);
+                    LOCKED_REGION_END
+            return Locked;
+        } else if (errno == EAGAIN) {
+            return Timeout;
+        } else {
+            LOG_DEBUG("Failed to acquire semaphore. [name=%s][priority=%d][error=%s]", this->name->c_str(),
+                      BASE_PRIORITY,
+                      strerror(errno));
+            return Error;
+        }
+    }
+    throw CONTROL_ERROR("No lock found for the specified priority. [lock=%s][priority=%d]", this->name->c_str(),
+                        BASE_PRIORITY);
+}
+
+lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priority) {
+    assert(NOT_NULL(semaphores));
+    std::lock_guard<std::mutex> guard(counts[priority]->priority_lock);
+
+    lock_acquire_enum ls = check_lock_state(priority);
+    if (ls == Locked) {
+        counts[priority]->count++;
+        thread_lock_record *t_rec = get_thread_lock();
+        if (NOT_NULL(t_rec)) {
+            t_rec->increment(priority);
+        }
+
+        return ls;
+    } else if (ls == QuotaReached) {
+        return ls;
+    } else if (ls == Expired) {
+        LOG_DEBUG("Lock expired. [resetting all semaphores]");
+        reset_locks();
+    }
 
     sem_t *lock = get(priority);
     if (IS_VALID_SEM_PTR(lock)) {
         LOG_DEBUG("Waiting for semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
         if (sem_wait(lock) == 0) {
-            LOCKED_REGION_START(sem_lock)
-                LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
-                counts[priority]->count++;
-                thread_lock_record *t_rec = get_thread_lock();
-                if (NOT_NULL(t_rec)) {
-                    t_rec->increment(priority);
-                }
-                client->update_lock(update, priority);
-                    LOCKED_REGION_END
+            LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
+            counts[priority]->count++;
+            counts[priority]->acquired_time = time_utils::now();
+            counts[priority]->has_lock = true;
+            thread_lock_record *t_rec = get_thread_lock();
+            if (NOT_NULL(t_rec)) {
+                t_rec->increment(priority);
+            }
             return Locked;
         } else {
             LOG_DEBUG("Failed to acquire semaphore. [name=%s][priority=%d][error=%s]", this->name->c_str(), priority,
@@ -221,25 +255,75 @@ lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock(int priorit
     }
     throw CONTROL_ERROR("No lock found for the specified priority. [lock=%s][priority=%d]", this->name->c_str(),
                         priority);
+}
+
+lock_acquire_enum com::watergate::core::_semaphore_client::wait_lock_0(double quota) {
+    assert(NOT_NULL(semaphores));
+    std::lock_guard<std::mutex> guard(counts[BASE_PRIORITY]->priority_lock);
+
+    LOCKED_REGION_START(sem_lock)
+        lock_acquire_enum ls = client->check_and_lock(BASE_PRIORITY, quota);
+        if (ls == Locked) {
+            counts[BASE_PRIORITY]->count++;
+            thread_lock_record *t_rec = get_thread_lock();
+            if (NOT_NULL(t_rec)) {
+                t_rec->increment(BASE_PRIORITY);
+            }
+            client->update_quota(quota);
+            return ls;
+        } else if (ls == QuotaReached) {
+            return ls;
+        } else if (ls == Expired) {
+            LOG_DEBUG("Lock expired. [resetting all semaphores]");
+            reset_locks();
+        }
+        client->update_quota(quota);
+            LOCKED_REGION_END
+
+    sem_t *lock = get(BASE_PRIORITY);
+    if (IS_VALID_SEM_PTR(lock)) {
+        LOG_DEBUG("Waiting for semaphore. [name=%s][priority=%d]", this->name->c_str(), BASE_PRIORITY);
+        if (sem_wait(lock) == 0) {
+            LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d]", this->name->c_str(), BASE_PRIORITY);
+            counts[BASE_PRIORITY]->count++;
+            counts[BASE_PRIORITY]->acquired_time = time_utils::now();
+            counts[BASE_PRIORITY]->has_lock = true;
+            thread_lock_record *t_rec = get_thread_lock();
+            if (NOT_NULL(t_rec)) {
+                t_rec->increment(BASE_PRIORITY);
+            }
+            LOCKED_REGION_START(sem_lock)
+                client->update_lock(true, BASE_PRIORITY);
+                    LOCKED_REGION_END
+            return Locked;
+        } else {
+            LOG_DEBUG("Failed to acquire semaphore. [name=%s][priority=%d][error=%s]", this->name->c_str(),
+                      BASE_PRIORITY,
+                      strerror(errno));
+            return Error;
+        }
+    }
+    throw CONTROL_ERROR("No lock found for the specified priority. [lock=%s][priority=%d]", this->name->c_str(),
+                        BASE_PRIORITY);
 }
 
 bool com::watergate::core::_semaphore_client::release_lock(int priority) {
     assert(NOT_NULL(semaphores));
 
     std::lock_guard<std::mutex> guard(counts[priority]->priority_lock);
-    LOCKED_REGION_START(sem_lock)
-        lock_acquire_enum ls = client->has_valid_lock(priority);
-        if (ls == Locked) {
-            counts[priority]->count--;
-            thread_lock_record *t_rec = get_thread_lock();
-            if (NOT_NULL(t_rec)) {
-                t_rec->decremet(priority);
-            }
-            int count = 0;
-            for (int ii = priority; ii < priorities; ii++) {
-                count += counts[ii]->count;
-            }
-            if (count <= 0) {
+    lock_acquire_enum ls = client->has_valid_lock(priority);
+    if (ls == Locked) {
+        counts[priority]->count--;
+        thread_lock_record *t_rec = get_thread_lock();
+        if (NOT_NULL(t_rec)) {
+            t_rec->decremet(priority);
+        }
+        int count = 0;
+        for (int ii = priority; ii < priorities; ii++) {
+            count += counts[ii]->count;
+        }
+        if (count <= 0) {
+            LOCKED_REGION_START(sem_lock)
                 sem_t *lock = get(priority);
                 if (IS_VALID_SEM_PTR(lock)) {
                     if (sem_post(lock) != 0) {
@@ -250,21 +334,23 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority) {
                     LOG_DEBUG("Released semaphore [name=%s][priority=%d]", this->name->c_str(),
                               priority);
 
+                    counts[priority]->acquired_time = 0;
+                    counts[priority]->has_lock = false;
                     client->release_lock(ls, priority);
                 } else {
                     throw CONTROL_ERROR("No semaphore found for the specified priority. [lock=%s][priority=%d]",
                                         this->name->c_str(),
                                         priority);
                 }
-            }
-            return true;
-        } else if (ls == Expired) {
-            LOG_DEBUG("Lock expired. [resetting all semaphores]");
-            reset_locks();
-        } else {
-            LOG_DEBUG("Lock already released. [state=%d]", ls);
+                    LOCKED_REGION_END
         }
-            LOCKED_REGION_END
+        return true;
+    } else if (ls == Expired) {
+        LOG_DEBUG("Lock expired. [resetting all semaphores]");
+        reset_locks();
+    } else {
+        LOG_DEBUG("Lock already released. [state=%d]", ls);
+    }
     return false;
 }
 

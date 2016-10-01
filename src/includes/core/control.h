@@ -39,6 +39,10 @@
 
 #define LOCKED_REGION_END } while(0);
 
+#define BASE_PRIORITY 0
+
+#define IS_BASE_PRIORITY(p) (p == BASE_PRIORITY)
+
 using namespace com::watergate::common;
 
 namespace com {
@@ -57,6 +61,8 @@ namespace com {
                 int priority;
                 mutex priority_lock;
                 atomic<int> count;
+                bool has_lock = false;
+                uint64_t acquired_time = 0;
             };
 
             class _semaphore {
@@ -167,6 +173,20 @@ namespace com {
                 unordered_map<string, thread_lock_record *> threads;
 
 
+                lock_acquire_enum check_lock_state(int priority) {
+                    _lock_counter *counter = counts[priority];
+                    if (counter->has_lock) {
+                        uint64_t now = time_utils::now();
+                        uint64_t v_time = counter->acquired_time + client->get_lock_lease_time();
+                        if (now <= v_time) {
+                            return Locked;
+                        } else {
+                            return Expired;
+                        }
+                    }
+                    return None;
+                }
+
                 void reset_locks() {
                     int max_priority = 0;
                     for (int ii = 0; ii < priorities; ii++) {
@@ -266,9 +286,13 @@ namespace com {
                     }
                 }
 
-                lock_acquire_enum try_lock(int priority, bool update, double quota);
+                lock_acquire_enum try_lock(int priority);
 
-                lock_acquire_enum wait_lock(int priority, bool update, double quota);
+                lock_acquire_enum try_lock_0(double quota);
+
+                lock_acquire_enum wait_lock(int priority);
+
+                lock_acquire_enum wait_lock_0(double quota);
 
                 bool release_lock(int priority);
 

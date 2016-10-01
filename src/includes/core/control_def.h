@@ -18,8 +18,7 @@
 #include "includes/common/alarm.h"
 
 #define DEFAULT_MAX_TIMEOUT 30 * 1000
-#define DEFAULT_LOCK_LOOP_SLEEP_TIME 10
-#define DEFAULT_TRY_SLEEP_TIME 2 * 1000
+#define DEFAULT_LOCK_LOOP_SLEEP_TIME 5
 
 namespace com {
     namespace watergate {
@@ -59,9 +58,9 @@ namespace com {
             class control_client : public control_def {
             private:
 
-                lock_acquire_enum try_lock(string name, int priority, double quota, bool update);
+                lock_acquire_enum try_lock(string name, int priority, double quota);
 
-                lock_acquire_enum wait_lock(string name, int priority, double quota, bool update);
+                lock_acquire_enum wait_lock(string name, int priority, double quota);
 
                 bool release_lock(string name, int priority);
 
@@ -84,12 +83,16 @@ namespace com {
                     t.start();
 
                     lock_acquire_enum ret;
+                    com::watergate::common::alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
                     while (true) {
                         ret = lock_get(name, priority, quota, timeout, err);
                         if (ret != QuotaReached) {
                             break;
                         }
-                        usleep(DEFAULT_TRY_SLEEP_TIME);
+                        if (!a.start()) {
+                            ret = Error;
+                            break;
+                        }
                         if (t.get_current_elapsed() > timeout && (priority != 0)) {
                             release_lock(name, priority);
                             *err = ERR_CORE_CONTROL_TIMEOUT;
