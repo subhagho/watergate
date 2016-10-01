@@ -296,7 +296,7 @@ namespace com {
                     vector<string> parts = common_utils::split(path, '/');
                     if (parts.size() > 1) {
                         string ss = string(parts[0]);
-                        for (int ii = 1; ii < parts.size() - 2; ii++) {
+                        for (uint32_t ii = 1; ii < parts.size() - 2; ii++) {
                             ss.append(parts[ii]);
                         }
                         return ss;

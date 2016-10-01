@@ -434,7 +434,7 @@ namespace com {
                 const void print(string offset) const override {
                     if (!IS_EMPTY(values)) {
                         cout << offset << get_key() << ": [\n";
-                        for (int ii = 0; ii < values.size(); ii++) {
+                        for (uint32_t ii = 0; ii < values.size(); ii++) {
                             ConfigValue *v = values[ii];
                             if (!IS_NULL(v)) {
                                 string off = string(offset);

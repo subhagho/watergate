@@ -37,7 +37,7 @@ namespace com {
                 static string get_normalized_name(const string name) {
                     if (!IS_EMPTY(name)) {
                         char buff[name.length() + 1];
-                        for (int ii = 0; ii < name.length(); ii++) {
+                        for (uint32_t ii = 0; ii < name.length(); ii++) {
                             char c = name[ii];
                             c = tolower(c);
                             if (isalnum(c)) {
