@@ -83,7 +83,7 @@ void rund(control_client *control, int priority, thread_record *record) {
         tg.stop();
 
         record->elapsed_time = tg.get_elapsed();
-        record->lock_wait_time = tg.get_current_elapsed();
+        record->lock_wait_time = tl.get_current_elapsed();
 
         LOG_INFO("[thread=%s][priority=%d] Finished execution...", tid.c_str(), priority);
     } catch (const exception &e) {
