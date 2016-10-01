@@ -19,12 +19,15 @@ list(REMOVE_ITEM WG_SOURCES "src/test/main.cpp")
 
 add_library(${WATERGATE_LIB_NAME} SHARED ${WG_INCLUDES} ${WG_SOURCES})
 
-set(WG_LIBRARIES)
+
 if (${APPLE})
-    set(WG_LIBRARIES)
-elseif (${UNIX} AND !${APPLE})
-    set(WG_LIBRARIES pthread uuid rt)
+    MESSAGE("Host platform: MAC OS X")
+elseif (${UNIX})
+    MESSAGE("Host platform:  Other UNIX")
+    set(WG_LIBRARIES "pthread" "uuid" "rt")
 endif ()
+
+MESSAGE("Using libraries : #" ${WG_LIBRARIES} "#")
 
 add_executable(main src/test/main.cpp)
 target_link_libraries(main watergate ${WG_LIBRARIES})
