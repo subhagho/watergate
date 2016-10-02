@@ -196,6 +196,9 @@ namespace com {
 
                 void reset_locks(int priority) {
                     counts[priority]->count = 0;
+                    counts[priority]->acquired_time = 0;
+                    counts[priority]->has_lock = false;
+
                     reset_thread_locks(priority);
                     client->release_lock(Expired, priority);
                     sem_t *lock = get(priority);

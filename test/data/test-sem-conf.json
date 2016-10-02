@@ -15,7 +15,7 @@
     "control": {
       "def": {
         "resource": {
-          "name": "test-dummy-resource",
+          "name": "dummy-resource-1",
           "class": "com::watergate::core::dummy_resource",
           "max_concurrency": "8"
         },

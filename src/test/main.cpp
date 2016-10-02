@@ -4,19 +4,16 @@
 #include <unistd.h>
 #include <iostream>
 #include <thread>
-#include <fstream>
 
 #include "includes/common/common.h"
 #include "includes/common/_env.h"
 #include "includes/core/control_manager.h"
 
-//#define CONFIG_FILE "/home/subho/dev/wookler/watergate/test/data/test-sem-conf.json"
 #define CONTROL_DEF_CONFIG_PATH "/configuration/control/def"
-#define LOCK_TABLE_NAME "Test lock-table"
 
 using namespace com::watergate::core;
 
-#define CONTROL_NAME "test-dummy-resource"
+#define CONTROL_NAME "dummy-resource-1"
 #define REQUIRE _assert
 
 _env *create_env(const string file) {
