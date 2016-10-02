@@ -44,7 +44,11 @@ void com::watergate::tests::common::basic_lock_client::setup() {
 
 void com::watergate::tests::common::basic_lock_client::run() {
     pid_t pid = getpid();
-    string tid = thread_lock_record::get_current_thread();
+    thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);
+    if (IS_NULL(tptr)) {
+        throw BASE_ERROR("Error registering thread. [name=%s]", CONTROL_NAME);
+    }
+    string tid = tptr->thread_id;
     int count = 0;
     LOG_INFO("Running lock control client. [pid=%d]", pid);
 

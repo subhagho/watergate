@@ -45,6 +45,12 @@ TEST_CASE("Basic lock operations", "[com::watergate::core::control_def]") {
     control_client *control = new control_client();
     control->init(env->get_app(), c_config);
 
+    thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);
+    if (IS_NULL(tptr)) {
+        throw BASE_ERROR("Error registering thread. [name=%s]", CONTROL_NAME);
+    }
+    string tid = tptr->thread_id;
+
     int err = 0;
     lock_acquire_enum r = control->lock(CONTROL_NAME, 0, 500, &err);
     REQUIRE(err == 0);
@@ -87,6 +93,12 @@ TEST_CASE("Fail lock operations", "[com::watergate::core::control_def]") {
 
     control_client *control = new control_client();
     control->init(env->get_app(), c_config);
+
+    thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);
+    if (IS_NULL(tptr)) {
+        throw BASE_ERROR("Error registering thread. [name=%s]", CONTROL_NAME);
+    }
+    string tid = tptr->thread_id;
 
     int count = 0;
     for (int ii = 0; ii < 8; ii++) {
