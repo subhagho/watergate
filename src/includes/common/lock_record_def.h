@@ -34,7 +34,6 @@ typedef struct {
 
 typedef struct {
     bool has_lock;
-    int lock_priority;
     long acquired_time;
     double quota_used;
     double quota_total;
@@ -62,6 +61,10 @@ typedef struct {
     long tries = 0;
 } _lock_metrics;
 
+typedef struct {
+    uint64_t id = -1;
+    uint64_t acquired_time = 0;
+} _lock_id;
 using namespace std;
 using namespace com::watergate::common;
 
@@ -70,7 +73,14 @@ namespace com {
         namespace core {
 
             enum lock_acquire_enum {
-                Locked = 0, Expired, Timeout, QuotaReached, Ignore, Locking, Error, None
+                Locked = 0, Expired, Timeout, QuotaReached, Ignore, Error, None
+            };
+
+            struct thread_lock_ptr {
+                string thread_id;
+                _lock_id **priority_lock_index = nullptr;
+                int lock_priority = -1;
+                _lock_metrics metrics;
             };
 
             class thread_lock_record {
@@ -78,16 +88,17 @@ namespace com {
                 std::string thread_id;
                 int *p_counts = nullptr;
                 int priorities = 0;
-                _lock_metrics metrics;
+                thread_lock_ptr *thread_ptr;
 
             public:
-                thread_lock_record(std::string thread_id, int priorities) {
-                    this->thread_id = thread_id;
+                thread_lock_record(thread_lock_ptr *thread_ptr, int priorities) {
+                    this->thread_id = thread_ptr->thread_id;
                     this->p_counts = (int *) malloc(priorities * sizeof(int));
                     this->priorities = priorities;
                     for (int ii = 0; ii < this->priorities; ii++) {
                         p_counts[ii] = 0;
                     }
+                    this->thread_ptr = thread_ptr;
                 }
 
                 ~thread_lock_record() {
@@ -95,6 +106,21 @@ namespace com {
                         free(p_counts);
                         p_counts = nullptr;
                     }
+                    if (NOT_NULL(thread_ptr)) {
+                        if (NOT_NULL(thread_ptr->priority_lock_index)) {
+                            for (int ii = 0; ii < priorities; ii++) {
+                                if (NOT_NULL(thread_ptr->priority_lock_index[ii])) {
+                                    free(thread_ptr->priority_lock_index[ii]);
+                                }
+                            }
+                            free(thread_ptr->priority_lock_index);
+                        }
+                        delete (thread_ptr);
+                    }
+                }
+
+                thread_lock_ptr *get_thread_ptr() {
+                    return thread_ptr;
                 }
 
                 int increment(int priority) {
@@ -113,31 +139,35 @@ namespace com {
                     return p_counts[priority];
                 }
 
-                void reset() {
-                    for (int ii = 0; ii < this->priorities; ii++) {
-                        p_counts[ii] = 0;
-                    }
+                void reset(int priority) {
+                    p_counts[priority] = 0;
+                    thread_ptr->priority_lock_index[priority]->acquired_time = 0;
+                    thread_ptr->priority_lock_index[priority]->id = -1;
                 }
 
                 void update_metrics(int priority, long lock_time) {
-                    if (metrics.base_priority < 0) {
-                        metrics.base_priority = priority;
+                    _assert(NOT_NULL(thread_ptr));
+
+                    if (thread_ptr->metrics.base_priority < 0) {
+                        thread_ptr->metrics.base_priority = priority;
                     }
-                    metrics.total_wait_time += lock_time;
-                    metrics.tries++;
-                    if (metrics.max_wait_time < lock_time) {
-                        metrics.max_wait_time = lock_time;
+                    thread_ptr->metrics.total_wait_time += lock_time;
+                    thread_ptr->metrics.tries++;
+                    if (thread_ptr->metrics.max_wait_time < lock_time) {
+                        thread_ptr->metrics.max_wait_time = lock_time;
                     }
                 }
 
                 void dump() {
+                    _assert(NOT_NULL(thread_ptr));
                     if (NOT_NULL(p_counts)) {
                         LOG_DEBUG("**************[THREAD:%s:%d]**************", thread_id.c_str(), getpid());
                         for (int ii = 0; ii < this->priorities; ii++) {
                             LOG_DEBUG("[priority=%d] count=%d", ii, p_counts[ii]);
-                            double avg = ((double) metrics.total_wait_time) / metrics.tries;
+                            double avg = ((double) thread_ptr->metrics.total_wait_time) / thread_ptr->metrics.tries;
                             LOG_DEBUG("METRICS : [base priority=%d][average wait time=%f][max wait time=%d][tries=%d]",
-                                      metrics.base_priority, avg, metrics.max_wait_time, metrics.tries);
+                                      thread_ptr->metrics.base_priority, avg, thread_ptr->metrics.max_wait_time,
+                                      thread_ptr->metrics.tries);
                         }
                         LOG_DEBUG("**************[THREAD:%s:%d]**************", thread_id.c_str(), getpid());
                     }
@@ -147,6 +177,18 @@ namespace com {
                     std::stringstream ss;
                     ss << std::this_thread::get_id();
                     return std::string(ss.str());
+                }
+
+                static thread_lock_ptr *create_new_ptr(int max_priority) {
+                    thread_lock_ptr *ptr = new thread_lock_ptr();
+                    ptr->thread_id = get_current_thread();
+                    ptr->priority_lock_index = (_lock_id **) malloc(max_priority * sizeof(_lock_id *));
+                    for (int ii = 0; ii < max_priority; ii++) {
+                        ptr->priority_lock_index[ii] = (_lock_id *) malloc(sizeof(_lock_id));
+                        ptr->priority_lock_index[ii]->acquired_time = 0;
+                        ptr->priority_lock_index[ii]->id = -1;
+                    }
+                    return ptr;
                 }
             };
         }

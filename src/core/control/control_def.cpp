@@ -67,9 +67,9 @@ lock_acquire_enum com::watergate::core::control_client::try_lock(string name, in
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
 
     if (IS_BASE_PRIORITY(priority))
-        return sem_c->try_lock_0(quota);
+        return sem_c->try_lock_base(quota, false);
     else
-        return sem_c->try_lock(priority);
+        return sem_c->try_lock(priority, false);
 }
 
 lock_acquire_enum
@@ -84,9 +84,9 @@ com::watergate::core::control_client::wait_lock(string name, int priority, doubl
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
 
     if (IS_BASE_PRIORITY(priority))
-        return sem_c->wait_lock_0(quota);
+        return sem_c->try_lock_base(quota, true);
     else
-        return sem_c->wait_lock(priority);
+        return sem_c->try_lock(priority, true);
 }
 
 bool com::watergate::core::control_client::release_lock(string name, int priority) {
@@ -99,7 +99,10 @@ bool com::watergate::core::control_client::release_lock(string name, int priorit
 
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
 
-    return sem_c->release_lock(priority);
+    if (IS_BASE_PRIORITY(priority))
+        return sem_c->release_lock_base();
+    else
+        return sem_c->release_lock(priority);
 }
 
 lock_acquire_enum
@@ -151,9 +154,7 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
 
     t.stop();
     long ts = t.get_elapsed();
-    LOCKED_REGION_START(sem_c->sem_lock)
-        sem_c->update_metrics(priority, ts);
-            LOCKED_REGION_END;
+    sem_c->update_metrics(priority, ts);
 
     return ret;
 }

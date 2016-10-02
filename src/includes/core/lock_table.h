@@ -29,7 +29,6 @@
 
 #define RELEASE_LOCK_RECORD(rec) do {\
     rec->lock.has_lock = false; \
-    rec->lock.lock_priority = -1; \
     rec->lock.acquired_time = -1; \
     rec->lock.quota_used = 0; \
 }while(0)
@@ -175,11 +174,6 @@ namespace com {
                     lock_record = create_new_record(app->get_name(), app->get_id(), pid);
                 }
 
-
-                int get_lock_priority() {
-                    return lock_record->lock.lock_priority;
-                }
-
                 _lock_record *new_record(string app_name, string app_id, pid_t pid) {
                     CHECK_STATE_AVAILABLE(state);
 
@@ -209,8 +203,7 @@ namespace com {
                         if (!is_lock_active()) {
                             return Expired;
                         } else {
-                            if (priority <= lock_record->lock.lock_priority)
-                                return Locked;
+                            return Locked;
                         }
                     }
                     return None;
@@ -245,10 +238,6 @@ namespace com {
                         lock_record->lock.has_lock = true;
                         lock_record->lock.acquired_time = time_utils::now();
                     }
-                    if (lock_record->lock.lock_priority < priority) {
-                        lock_record->lock.lock_priority = priority;
-                        LOG_DEBUG("Current lock priority level = %d", lock_record->lock.lock_priority);
-                    }
                 }
 
                 void update_quota(double quota) {
@@ -261,11 +250,6 @@ namespace com {
                     if (lock_state == Expired || lock_state == Locked) {
                         if (lock_record->lock.has_lock && priority == 0) {
                             RELEASE_LOCK_RECORD(lock_record);
-                        } else {
-                            if (lock_record->lock.lock_priority >= priority) {
-                                lock_record->lock.lock_priority = priority - 1;
-                                LOG_DEBUG("Current lock priority level = %d", lock_record->lock.lock_priority);
-                            }
                         }
                     }
                 }
@@ -286,7 +270,6 @@ namespace com {
                         LOG_DEBUG("\t\tregister time=%d", lock_record->app.register_time);
                         LOG_DEBUG("\t\tlast active=%d", lock_record->app.last_active_ts);
                         LOG_DEBUG("\t\thas lock=%s", (lock_record->lock.has_lock ? "true" : "false"));
-                        LOG_DEBUG("\t\tlock priority=%d", lock_record->lock.lock_priority);
                         LOG_DEBUG("\t\tacquired time=%d", lock_record->lock.acquired_time);
                         LOG_DEBUG("\t\tused quota=%f", lock_record->lock.quota_used);
                         LOG_DEBUG("\t\ttotal quota=%f", lock_record->lock.quota_total);

@@ -41,19 +41,27 @@ typedef struct {
 
 void rund(control_client *control, int priority, thread_record *record) {
     try {
-        string tid = thread_lock_record::get_current_thread();
+        thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);
+        if (IS_NULL(tptr)) {
+            throw BASE_ERROR("Error registering thread. [name=%s]", CONTROL_NAME);
+        }
+        string tid = tptr->thread_id;
         record->priority = priority;
         record->thread_id = string(tid);
         timer tg, tl;
         tg.start();
         int count = 0;
+        uint64_t elapsed = 0;
         for (int ii = 0; ii < 8; ii++) {
             int err = 0;
             int retry_count = 0;
             while (true) {
+                uint64_t ts = time_utils::now();
                 tl.restart();
-                lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, 20000, &err);
+                err = 0;
+                lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
                 tl.pause();
+                elapsed += (time_utils::now() - ts);
                 if (r == Locked && err == 0) {
                     LOG_INFO("Successfully acquired lock [thread=%s][name=%s][priority=%d][try=%d]", tid.c_str(),
                              CONTROL_NAME, priority,
@@ -83,7 +91,7 @@ void rund(control_client *control, int priority, thread_record *record) {
         tg.stop();
 
         record->elapsed_time = tg.get_elapsed();
-        record->lock_wait_time = tl.get_current_elapsed();
+        record->lock_wait_time = elapsed;
 
         LOG_INFO("[thread=%s][priority=%d] Finished execution...", tid.c_str(), priority);
     } catch (const exception &e) {
@@ -95,19 +103,27 @@ void rund(control_client *control, int priority, thread_record *record) {
 
 void run(control_client *control, int priority, thread_record *record) {
     try {
-        string tid = thread_lock_record::get_current_thread();
+        thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);
+        if (IS_NULL(tptr)) {
+            throw BASE_ERROR("Error registering thread. [name=%s]", CONTROL_NAME);
+        }
+        string tid = tptr->thread_id;
         record->priority = priority;
         record->thread_id = string(tid);
         timer tg, tl;
         tg.start();
         int count = 0;
+        uint64_t elapsed = 0;
         for (int ii = 0; ii < 8; ii++) {
             int err = 0;
             int retry_count = 0;
             while (true) {
+                uint64_t ts = time_utils::now();
                 tl.restart();
+                err = 0;
                 lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
                 tl.pause();
+                elapsed += (time_utils::now() - ts);
                 if (r == Locked && err == 0) {
                     LOG_INFO("Successfully acquired lock [thread=%s][name=%s][priority=%d][try=%d]", tid.c_str(),
                              CONTROL_NAME, priority,
@@ -137,7 +153,7 @@ void run(control_client *control, int priority, thread_record *record) {
         tg.stop();
 
         record->elapsed_time = tg.get_elapsed();
-        record->lock_wait_time = tl.get_current_elapsed();
+        record->lock_wait_time = elapsed;
 
         LOG_INFO("[thread=%s][priority=%d] Finished execution...", tid.c_str(), priority);
     } catch (const exception &e) {
@@ -174,9 +190,9 @@ int main(int argc, char *argv[]) {
         int t_count = 6;
 
         thread *threads[t_count];
-        thread_record * records[t_count];
+        thread_record *records[t_count];
         for (int ii = 0; ii < t_count - 1; ii++) {
-            thread_record * tr = new thread_record();
+            thread_record *tr = new thread_record();
             tr->thread_index = ii;
             thread *t = new thread(run, control, ii % 2, tr);
 
@@ -185,7 +201,7 @@ int main(int argc, char *argv[]) {
         }
         {
             int ii = t_count - 1;
-            thread_record * tr = new thread_record();
+            thread_record *tr = new thread_record();
             tr->thread_index = ii;
             thread *t = new thread(rund, control, 1, tr);
 
@@ -198,14 +214,13 @@ int main(int argc, char *argv[]) {
             threads[ii]->join();
         }
 
-
         control->dump();
 
         manager->dump();
         manager->clear_locks();
 
         for (int ii = 0; ii < t_count; ii++) {
-            thread_record * tr = records[ii];
+            thread_record *tr = records[ii];
             if (NOT_NULL(tr)) {
                 LOG_WARN("[thread:%s][priority=%d] total elapsed time = %d, total lock wait time = %d",
                          tr->thread_id.c_str(),

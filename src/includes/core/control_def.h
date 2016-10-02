@@ -102,6 +102,23 @@ namespace com {
                     return ret;
                 }
 
+                thread_lock_ptr *register_thread(string lock_name) {
+                    CHECK_STATE_AVAILABLE(state);
+
+                    _semaphore *sem = get_lock(lock_name);
+                    if (IS_NULL(sem)) {
+                        throw CONTROL_ERROR("No registered lock with specified name. [name=%s]", lock_name.c_str());
+                    }
+
+                    _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
+
+                    thread_lock_record *rec = sem_c->register_thread();
+                    if (NOT_NULL(rec)) {
+                        return rec->get_thread_ptr();
+                    }
+                    return nullptr;
+                }
+
                 bool release(string name, int priority);
 
                 void dump() {
