@@ -28,6 +28,7 @@
 #define LOCK_TABLE_ERROR_PTR(fmt, ...) new lock_table_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 
 #define RELEASE_LOCK_RECORD(rec, priority) do {\
+    LOG_DEBUG("[priority=%d] Resetting lock record...", priority); \
     rec->lock.locks[priority].has_lock = false; \
     rec->lock.locks[priority].acquired_time = -1; \
     rec->lock.quota_used = 0; \
@@ -138,6 +139,7 @@ namespace com {
 
             class lock_table_client : public lock_table {
             private:
+                mutex _update_lock;
                 _lock_record *lock_record;
 
                 bool is_lock_active(int priority) {
@@ -219,37 +221,72 @@ namespace com {
                         release_lock(ls, priority);
                         return ls;
                     } else if (ls == Locked) {
-                        double q = get_quota();
-                        if (q > 0) {
-                            double aq = q - lock_record->lock.quota_used;
-                            if (aq < quota) {
-                                return QuotaReached;
+                        do {
+                            std::lock_guard<std::mutex> guard(_update_lock);
+                            double q = get_quota();
+                            if (q > 0) {
+                                double aq = q - lock_record->lock.quota_used;
+                                if (aq < quota) {
+                                    return QuotaReached;
+                                }
+                                lock_record->lock.quota_used += quota;
+                                lock_record->lock.quota_total += quota;
+                                LOG_DEBUG("[priority=%d] Current quota used = %f", priority,
+                                          lock_record->lock.quota_used);
                             }
-                        }
+                        } while (0);
                         return ls;
                     }
                     return ls;
                 }
 
-                void update_lock(bool update, int priority) {
+                lock_acquire_enum quota_available(double quota) {
                     CHECK_STATE_AVAILABLE(state);
 
-                    if (update) {
+                    do {
+                        std::lock_guard<std::mutex> guard(_update_lock);
+                        double q = get_quota();
+                        if (q > 0) {
+                            double aq = q - lock_record->lock.quota_used;
+                            if (aq < quota) {
+                                LOG_DEBUG("Quota Reached %f", lock_record->lock.quota_used);
+                                return QuotaReached;
+                            }
+                        }
+                    } while (0);
+
+                    return QuotaAvailable;
+                }
+
+                void update_lock(int priority) {
+                    CHECK_STATE_AVAILABLE(state);
+
+                    do {
+                        std::lock_guard<std::mutex> guard(_update_lock);
                         lock_record->lock.locks[priority].has_lock = true;
                         lock_record->lock.locks[priority].acquired_time = time_utils::now();
-                    }
+                    } while (0);
                 }
 
                 void update_quota(double quota) {
-                    lock_record->lock.quota_used += quota;
-                    lock_record->lock.quota_total += quota;
+                    CHECK_STATE_AVAILABLE(state);
+                    do {
+                        std::lock_guard<std::mutex> guard(_update_lock);
+                        lock_record->lock.quota_used += quota;
+                        lock_record->lock.quota_total += quota;
+                        LOG_DEBUG("[priority=%d] Current quota used = %f", BASE_PRIORITY,
+                                  lock_record->lock.quota_used);
+                    } while (0);
                 }
 
                 void release_lock(lock_acquire_enum lock_state, int priority) {
                     CHECK_STATE_AVAILABLE(state);
                     if (lock_state == Expired || lock_state == Locked) {
-                        if (lock_record->lock.locks[priority].has_lock) {
-                            RELEASE_LOCK_RECORD(lock_record, priority);
+                        if (IS_BASE_PRIORITY(priority) && lock_record->lock.locks[priority].has_lock) {
+                            do {
+                                std::lock_guard<std::mutex> guard(_update_lock);
+                                RELEASE_LOCK_RECORD(lock_record, priority);
+                            } while (0);
                         }
                     }
                 }

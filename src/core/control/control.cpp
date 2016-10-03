@@ -138,8 +138,6 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
         t_ptr->priority_lock_index[priority]->id = counts[priority]->index;
         t_ptr->priority_lock_index[priority]->acquired_time = time_utils::now();
         return ls;
-    } else if (ls == QuotaReached) {
-        return ls;
     } else if (ls == Expired) {
         LOG_DEBUG("Lock expired. [resetting all semaphores]");
         reset_locks(priority);
@@ -162,7 +160,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
             t_rec->increment(priority);
             t_ptr->priority_lock_index[priority]->id = counts[priority]->index;
             t_ptr->priority_lock_index[priority]->acquired_time = time_utils::now();
-            client->update_lock(false, priority);
+            client->update_lock(priority);
             return Locked;
         } else {
             LOG_DEBUG("Failed to acquire semaphore. [name=%s][priority=%d][error=%s]", this->name->c_str(), priority,
@@ -199,7 +197,6 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double 
         t_rec->increment(BASE_PRIORITY);
         t_ptr->priority_lock_index[BASE_PRIORITY]->id = counts[BASE_PRIORITY]->index;
         t_ptr->priority_lock_index[BASE_PRIORITY]->acquired_time = time_utils::now();
-        client->update_quota(quota);
         return ls;
     } else if (ls == QuotaReached) {
         return ls;
@@ -207,7 +204,6 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double 
         LOG_DEBUG("Lock expired. [resetting all semaphores]");
         reset_locks(BASE_PRIORITY);
     }
-    client->update_quota(quota);
 
     sem_t *lock = get(BASE_PRIORITY);
     if (IS_VALID_SEM_PTR(lock)) {
@@ -226,7 +222,9 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double 
             t_rec->increment(BASE_PRIORITY);
             t_ptr->priority_lock_index[BASE_PRIORITY]->id = counts[BASE_PRIORITY]->index;
             t_ptr->priority_lock_index[BASE_PRIORITY]->acquired_time = time_utils::now();
-            client->update_lock(true, BASE_PRIORITY);
+            client->update_lock(BASE_PRIORITY);
+            client->update_quota(quota);
+
             return Locked;
         } else if (errno == EAGAIN) {
             return Timeout;

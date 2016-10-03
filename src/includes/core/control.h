@@ -32,9 +32,6 @@
 
 #define IS_VALID_SEM_PTR(ptr) (NOT_NULL(ptr) && ptr != SEM_FAILED)
 
-#define BASE_PRIORITY 0
-
-#define IS_BASE_PRIORITY(p) (p == BASE_PRIORITY)
 
 #define CONTROL_LOCK_PREFIX "/locks"
 

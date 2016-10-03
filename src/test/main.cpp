@@ -48,17 +48,14 @@ void rund(control_client *control, int priority, thread_record *record) {
         timer tg, tl;
         tg.start();
         int count = 0;
-        uint64_t elapsed = 0;
         for (int ii = 0; ii < 8; ii++) {
             int err = 0;
             int retry_count = 0;
             while (true) {
-                uint64_t ts = time_utils::now();
                 tl.restart();
                 err = 0;
                 lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
                 tl.pause();
-                elapsed += (time_utils::now() - ts);
                 if (r == Locked && err == 0) {
                     LOG_INFO("Successfully acquired lock [thread=%s][name=%s][priority=%d][try=%d]", tid.c_str(),
                              CONTROL_NAME, priority,
@@ -66,7 +63,7 @@ void rund(control_client *control, int priority, thread_record *record) {
                     count++;
                     usleep(5 * 1000);
                     bool r = control->release(CONTROL_NAME, priority);
-                    LOG_INFO("Successfully released lock [thread=%s][name=%s][priority=%d][index=%d]", tid.c_str(),
+                    LOG_INFO("Successfully released lock [thread=%s][name=%s][priority=%d][try=%d]", tid.c_str(),
                              CONTROL_NAME, priority,
                              ii);
                     break;
@@ -88,7 +85,7 @@ void rund(control_client *control, int priority, thread_record *record) {
         tg.stop();
 
         record->elapsed_time = tg.get_elapsed();
-        record->lock_wait_time = elapsed;
+        record->lock_wait_time = tl.get_current_elapsed();
 
         LOG_INFO("[thread=%s][priority=%d] Finished execution...", tid.c_str(), priority);
     } catch (const exception &e) {
@@ -110,17 +107,14 @@ void run(control_client *control, int priority, thread_record *record) {
         timer tg, tl;
         tg.start();
         int count = 0;
-        uint64_t elapsed = 0;
         for (int ii = 0; ii < 8; ii++) {
             int err = 0;
             int retry_count = 0;
             while (true) {
-                uint64_t ts = time_utils::now();
                 tl.restart();
                 err = 0;
                 lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
                 tl.pause();
-                elapsed += (time_utils::now() - ts);
                 if (r == Locked && err == 0) {
                     LOG_INFO("Successfully acquired lock [thread=%s][name=%s][priority=%d][try=%d]", tid.c_str(),
                              CONTROL_NAME, priority,
@@ -150,7 +144,7 @@ void run(control_client *control, int priority, thread_record *record) {
         tg.stop();
 
         record->elapsed_time = tg.get_elapsed();
-        record->lock_wait_time = elapsed;
+        record->lock_wait_time = tl.get_current_elapsed();
 
         LOG_INFO("[thread=%s][priority=%d] Finished execution...", tid.c_str(), priority);
     } catch (const exception &e) {

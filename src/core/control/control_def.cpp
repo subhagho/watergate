@@ -135,7 +135,7 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
             }
 
             ret = this->try_lock(name, ii, quota);
-            if (ret == Locked) {
+            if (ret == Locked || ret == QuotaReached || ret == Error) {
                 break;
             } else {
                 if (!a.start()) {

@@ -19,6 +19,10 @@
 #define MAX_STRING_SIZE 64
 #define FREE_INDEX_USED -999
 
+#define BASE_PRIORITY 0
+
+#define IS_BASE_PRIORITY(p) (p == BASE_PRIORITY)
+
 #define RESET_RECORD(rec) do {\
     rec->used = false; \
     memset(&rec->app, 0, sizeof(_app_handle)); \
@@ -80,7 +84,7 @@ namespace com {
         namespace core {
 
             enum lock_acquire_enum {
-                Locked = 0, Expired, Timeout, QuotaReached, Ignore, Error, None
+                Locked = 0, Expired, Timeout, QuotaReached, QuotaAvailable, Error, None
             };
 
             struct thread_lock_ptr {
