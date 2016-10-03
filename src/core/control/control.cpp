@@ -37,9 +37,9 @@ void com::watergate::core::_semaphore::create(const _app *app, const ConfigValue
         throw CONFIG_ERROR("Required configuration node not found. [node=%s]", CONST_SEM_CONFIG_NODE_PRIORITIES);
     }
     this->priorities = v_prior->get_int_value(this->priorities);
-    if (this->priorities > DEFAULT_MAX_PRIORITIES) {
+    if (this->priorities > MAX_PRIORITY_ALLOWED) {
         throw CONFIG_ERROR("Invalid configuration value. [%s=%d][MAX=%d]", CONST_SEM_CONFIG_NODE_PRIORITIES,
-                           this->priorities, DEFAULT_MAX_PRIORITIES);
+                           this->priorities, MAX_PRIORITY_ALLOWED);
     }
     this->max_concurrent = this->resource->get_control_size();
     if (this->max_concurrent > SEM_VALUE_MAX) {

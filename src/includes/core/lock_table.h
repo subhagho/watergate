@@ -27,9 +27,9 @@
 #define LOCK_TABLE_ERROR(fmt, ...) lock_table_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 #define LOCK_TABLE_ERROR_PTR(fmt, ...) new lock_table_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 
-#define RELEASE_LOCK_RECORD(rec) do {\
-    rec->lock.has_lock = false; \
-    rec->lock.acquired_time = -1; \
+#define RELEASE_LOCK_RECORD(rec, priority) do {\
+    rec->lock.locks[priority].has_lock = false; \
+    rec->lock.locks[priority].acquired_time = -1; \
     rec->lock.quota_used = 0; \
 }while(0)
 
@@ -140,10 +140,10 @@ namespace com {
             private:
                 _lock_record *lock_record;
 
-                bool is_lock_active() {
-                    if (lock_record->lock.has_lock) {
+                bool is_lock_active(int priority) {
+                    if (lock_record->lock.locks[priority].has_lock) {
                         long now = time_utils::now();
-                        if (now < (lock_record->lock.acquired_time + get_lock_lease_time())) {
+                        if (now < (lock_record->lock.locks[priority].acquired_time + get_lock_lease_time())) {
                             return true;
                         }
                     }
@@ -199,8 +199,8 @@ namespace com {
                 lock_acquire_enum has_valid_lock(int priority) {
                     CHECK_STATE_AVAILABLE(state);
 
-                    if (lock_record->lock.has_lock) {
-                        if (!is_lock_active()) {
+                    if (lock_record->lock.locks[priority].has_lock) {
+                        if (!is_lock_active(priority)) {
                             return Expired;
                         } else {
                             return Locked;
@@ -235,8 +235,8 @@ namespace com {
                     CHECK_STATE_AVAILABLE(state);
 
                     if (update) {
-                        lock_record->lock.has_lock = true;
-                        lock_record->lock.acquired_time = time_utils::now();
+                        lock_record->lock.locks[priority].has_lock = true;
+                        lock_record->lock.locks[priority].acquired_time = time_utils::now();
                     }
                 }
 
@@ -248,8 +248,8 @@ namespace com {
                 void release_lock(lock_acquire_enum lock_state, int priority) {
                     CHECK_STATE_AVAILABLE(state);
                     if (lock_state == Expired || lock_state == Locked) {
-                        if (lock_record->lock.has_lock && priority == 0) {
-                            RELEASE_LOCK_RECORD(lock_record);
+                        if (lock_record->lock.locks[priority].has_lock) {
+                            RELEASE_LOCK_RECORD(lock_record, priority);
                         }
                     }
                 }
@@ -259,7 +259,7 @@ namespace com {
 
                     LOG_DEBUG("**************[LOCK TABLE:%s:%d]**************", get_name().c_str(), getpid());
                     LOG_DEBUG("\tquota=%f", get_quota());
-                    LOG_DEBUG("\tlease time=%d", get_lock_lease_time());
+                    LOG_DEBUG("\tlease time=%lu", get_lock_lease_time());
 
                     if (NOT_NULL(lock_record)) {
                         LOG_DEBUG("\t\tin use=%s", (lock_record->used ? "used" : "unused"));
@@ -267,10 +267,13 @@ namespace com {
                         LOG_DEBUG("\t\tapp name=%s", lock_record->app.app_name);
                         LOG_DEBUG("\t\tapp id=%s", lock_record->app.app_id);
                         LOG_DEBUG("\t\tproc id=%d", lock_record->app.proc_id);
-                        LOG_DEBUG("\t\tregister time=%d", lock_record->app.register_time);
-                        LOG_DEBUG("\t\tlast active=%d", lock_record->app.last_active_ts);
-                        LOG_DEBUG("\t\thas lock=%s", (lock_record->lock.has_lock ? "true" : "false"));
-                        LOG_DEBUG("\t\tacquired time=%d", lock_record->lock.acquired_time);
+                        LOG_DEBUG("\t\tregister time=%lu", lock_record->app.register_time);
+                        LOG_DEBUG("\t\tlast active=%lu", lock_record->app.last_active_ts);
+                        for (int ii = 0; ii < MAX_PRIORITY_ALLOWED; ii++) {
+                            LOG_DEBUG("\t\t[%d] has lock=%s", ii,
+                                      (lock_record->lock.locks[ii].has_lock ? "true" : "false"));
+                            LOG_DEBUG("\t\t[%d] acquired time=%lu", ii, lock_record->lock.locks[ii].acquired_time);
+                        }
                         LOG_DEBUG("\t\tused quota=%f", lock_record->lock.quota_used);
                         LOG_DEBUG("\t\ttotal quota=%f", lock_record->lock.quota_total);
                     }

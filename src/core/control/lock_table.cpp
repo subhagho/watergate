@@ -27,11 +27,11 @@ void com::watergate::core::lock_table::create(string name, resource_def *resourc
             mode = O_RDWR;
         }
 
-        shm_fd = shm_open(this->name.c_str(), mode, 0666);
+        shm_fd = shm_open(this->name.c_str(), mode, 0760);
         if (shm_fd < 0) {
             lock_table_error te = LOCK_TABLE_ERROR(
-                    "Error creating shared memory handle. [name=%s][errno=%d]",
-                    this->name.c_str(), errno);
+                    "Error creating shared memory handle. [name=%s][error=%s]",
+                    this->name.c_str(), strerror(errno));
             LOG_ERROR(te.what());
             throw te;
         }
@@ -44,8 +44,8 @@ void com::watergate::core::lock_table::create(string name, resource_def *resourc
         mem_ptr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
         if (mem_ptr == MAP_FAILED) {
             lock_table_error te = LOCK_TABLE_ERROR(
-                    "Error mapping shared memory segment. [name=%s][errno=%d]",
-                    this->name.c_str(), errno);
+                    "Error mapping shared memory segment. [name=%s][error=%s]",
+                    this->name.c_str(), strerror(errno));
             LOG_ERROR(te.what());
             throw te;
         }

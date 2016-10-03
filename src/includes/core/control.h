@@ -16,9 +16,7 @@
 #include "resource_def.h"
 #include "lock_table.h"
 
-#define DEFAULT_SEM_MODE 0660
-
-#define DEFAULT_MAX_PRIORITIES 5
+#define DEFAULT_SEM_MODE 0760
 
 #define CONST_SEM_CONFIG_NODE_RESOURCE "./resource"
 #define CONST_SEM_CONFIG_PARAM_RESOURCE_NAME "name"

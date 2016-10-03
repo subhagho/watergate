@@ -14,7 +14,8 @@
 #include "includes/common/common.h"
 #include "includes/common/base_error.h"
 
-#define DEFAULT_MAX_RECORDS 4096
+#define MAX_PRIORITY_ALLOWED 8
+#define DEFAULT_MAX_RECORDS 2048
 #define MAX_STRING_SIZE 64
 #define FREE_INDEX_USED -999
 
@@ -28,13 +29,17 @@ typedef struct {
     char app_name[MAX_STRING_SIZE];
     char app_id[MAX_STRING_SIZE];
     pid_t proc_id;
-    long register_time;
-    long last_active_ts;
+    uint64_t register_time = 0;
+    uint64_t last_active_ts = 0;
 } _app_handle;
 
 typedef struct {
-    bool has_lock;
-    long acquired_time;
+    bool has_lock = false;
+    uint64_t acquired_time = 0;
+} _priority_lock;
+
+typedef struct {
+    _priority_lock locks[MAX_PRIORITY_ALLOWED];
     double quota_used;
     double quota_total;
 } _lock_handle;
@@ -48,7 +53,7 @@ typedef struct {
 
 
 typedef struct {
-    long lock_lease_time;
+    uint64_t lock_lease_time;
     double quota = -1;
     int free_indexes[DEFAULT_MAX_RECORDS];
     _lock_record records[DEFAULT_MAX_RECORDS];
@@ -56,9 +61,9 @@ typedef struct {
 
 typedef struct {
     int base_priority = -1;
-    long total_wait_time = 0;
-    long max_wait_time = 0;
-    long tries = 0;
+    uint64_t total_wait_time = 0;
+    uint64_t max_wait_time = 0;
+    uint64_t tries = 0;
 } _lock_metrics;
 
 typedef struct {
@@ -66,6 +71,8 @@ typedef struct {
     uint64_t acquired_time = 0;
 } _lock_id;
 using namespace std;
+
+
 using namespace com::watergate::common;
 
 namespace com {
@@ -165,9 +172,10 @@ namespace com {
                         for (int ii = 0; ii < this->priorities; ii++) {
                             LOG_DEBUG("[priority=%d] count=%d", ii, p_counts[ii]);
                             double avg = ((double) thread_ptr->metrics.total_wait_time) / thread_ptr->metrics.tries;
-                            LOG_DEBUG("METRICS : [base priority=%d][average wait time=%f][max wait time=%d][tries=%d]",
-                                      thread_ptr->metrics.base_priority, avg, thread_ptr->metrics.max_wait_time,
-                                      thread_ptr->metrics.tries);
+                            LOG_DEBUG(
+                                    "METRICS : [base priority=%d][average wait time=%f][max wait time=%lu][tries=%lu]",
+                                    thread_ptr->metrics.base_priority, avg, thread_ptr->metrics.max_wait_time,
+                                    thread_ptr->metrics.tries);
                         }
                         LOG_DEBUG("**************[THREAD:%s:%d]**************", thread_id.c_str(), getpid());
                     }
