@@ -19,7 +19,6 @@ list(REMOVE_ITEM WG_SOURCES "src/test/main.cpp")
 
 add_library(${WATERGATE_LIB_NAME} SHARED ${WG_INCLUDES} ${WG_SOURCES})
 
-
 if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
 elseif (${UNIX})

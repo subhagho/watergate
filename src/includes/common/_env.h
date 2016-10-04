@@ -12,6 +12,7 @@
 #include "file_utils.h"
 #include "_app.h"
 #include "log_utils.h"
+#include "metrics.h"
 
 #define CONFIG_ENV_PARAM_TEMPDIR "env.config.tempdir"
 #define CONFIG_ENV_PARAM_WORKDIR "env.config.workdir"

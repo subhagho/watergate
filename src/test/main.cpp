@@ -15,6 +15,7 @@ using namespace com::watergate::core;
 
 #define CONTROL_NAME "dummy-resource-1"
 #define REQUIRE _assert
+#define METRIC_LOCK_TIME "lock.acquire.wait.time"
 
 _env *create_env(const string file) {
     try {
@@ -52,10 +53,12 @@ void rund(control_client *control, int priority, thread_record *record) {
             int err = 0;
             int retry_count = 0;
             while (true) {
+                START_TIMER(METRIC_LOCK_TIME);
                 tl.restart();
                 err = 0;
                 lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
                 tl.pause();
+                END_TIMER(METRIC_LOCK_TIME);
                 if (r == Locked && err == 0) {
                     LOG_INFO("Successfully acquired lock [thread=%s][name=%s][priority=%d][try=%d]", tid.c_str(),
                              CONTROL_NAME, priority,
@@ -111,10 +114,13 @@ void run(control_client *control, int priority, thread_record *record) {
             int err = 0;
             int retry_count = 0;
             while (true) {
+                START_TIMER(METRIC_LOCK_TIME);
                 tl.restart();
                 err = 0;
                 lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
                 tl.pause();
+                END_TIMER(METRIC_LOCK_TIME);
+
                 if (r == Locked && err == 0) {
                     LOG_INFO("Successfully acquired lock [thread=%s][name=%s][priority=%d][try=%d]", tid.c_str(),
                              CONTROL_NAME, priority,
@@ -178,6 +184,11 @@ int main(int argc, char *argv[]) {
         control_client *control = new control_client();
         control->init(env->get_app(), c_config);
 
+        bool r = metrics_utils::create_metric(METRIC_LOCK_TIME, AverageMetric, true);
+        if (!r) {
+            throw BASE_ERROR("Error creating metrics. [name=%s]", METRIC_LOCK_TIME);
+        }
+
         int t_count = 6;
 
         thread *threads[t_count];
@@ -218,6 +229,8 @@ int main(int argc, char *argv[]) {
                          tr->priority, tr->elapsed_time, tr->lock_wait_time);
             }
         }
+
+        metrics_utils::dump();
 
         CHECK_AND_FREE(manager);
         CHECK_AND_FREE(control);
