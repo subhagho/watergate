@@ -12,6 +12,6 @@
 #include "includes/common/_env.h"
 #include "test_common.h"
 
-#define CONFIG_FILE "/home/subho/dev/wookler/watergate/test/data/test-conf.json"
+#define CONFIG_FILE getenv("CONFIG_FILE_PATH")
 
 #endif //WATERGATE_MAIN_H

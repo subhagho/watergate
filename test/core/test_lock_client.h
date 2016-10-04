@@ -12,7 +12,7 @@
 
 #include "includes/ext/options_args.h"
 
-#define CONFIG_FILE "/work/dev/wookler/watergate/test/data/test-sem-conf.json"
+#define CONFIG_FILE getenv("CONFIG_FILE_PATH")
 #define CONTROL_DEF_CONFIG_PATH "/configuration/control/def"
 
 #define TLC_CONFIG_NODE "/configuration/test-lock-client"
@@ -21,7 +21,7 @@
 #define TCL_CONFIG_VALUE_SLEEP "sleep.time"
 #define TCL_CONFIG_VALUE_TRIES "lock.tries"
 
-#define CONTROL_NAME "test-dummy-resource"
+#define CONTROL_NAME "dummy-resource-1"
 
 using namespace com::watergate::common;
 using namespace com::watergate::core;

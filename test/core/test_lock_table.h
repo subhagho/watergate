@@ -12,6 +12,6 @@
 #include "../common/test_common.h"
 #include "includes/core/lock_table.h"
 
-#define CONFIG_FILE "/work/dev/wookler/watergate/test/data/test-sem-conf.json"
+#define CONFIG_FILE getenv("CONFIG_FILE_PATH")
 
 #endif //WATERGATE_TEST_LOCK_TABLE_H

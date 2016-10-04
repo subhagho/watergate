@@ -80,6 +80,8 @@ void com::watergate::tests::common::basic_lock_client::run() {
         START_ALARM(sleep_timeout, b);
     }
 
+    LOG_DEBUG("[pid=%d][priority=%d] Finished executing....", pid, priority);
+
     control->dump();
 }
 

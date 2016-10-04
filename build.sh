@@ -1,7 +1,7 @@
 #!/bin/bash
 
-#CMAKE=/Applications/CMake.app/Contents/bin/cmake
-CMAKE="cmake -DCMAKE_BUILD_TYPE=Debug"
+CMAKE=/Applications/CMake.app/Contents/bin/cmake
+#CMAKE="cmake -DCMAKE_BUILD_TYPE=Debug"
 
 BUILD_DIRS="$PWD/ $PWD/test"
 

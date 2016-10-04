@@ -207,7 +207,6 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double 
 
     sem_t *lock = get(BASE_PRIORITY);
     if (IS_VALID_SEM_PTR(lock)) {
-        LOG_DEBUG("Trying for semaphore. [name=%s][priority=%d]", this->name->c_str(), BASE_PRIORITY);
         int r = 0;
         if (wait) {
             r = sem_wait(lock);

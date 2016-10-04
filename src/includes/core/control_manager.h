@@ -14,6 +14,8 @@ namespace com {
             public:
                 void init(const _app *app, const ConfigValue *config) {
                     create(app, config, true);
+
+                    clear_locks();
                 }
 
                 void clear_locks() {

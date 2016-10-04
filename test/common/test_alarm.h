@@ -14,7 +14,7 @@
 #include "includes/common/timer.h"
 #include "includes/common/alarm.h"
 
-#define CONFIG_FILE "~/dev/wookler/watergate/test/data/test-conf.json"
+#define CONFIG_FILE getenv("CONFIG_FILE_PATH")
 
 using namespace com::watergate::core;
 using namespace com::watergate::common;

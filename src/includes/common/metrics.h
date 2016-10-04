@@ -193,7 +193,6 @@ namespace com {
 
                         metrics->clear();
 
-                        delete (metrics);
                     }
                 }
 
