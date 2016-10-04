@@ -17,7 +17,7 @@
 #define START_TIMER(n) timer _t_##n; \
      _t_##n.start();
 
-#define END_TIMER(n) com::watergate::common::metrics_utils::timed_metric(n, _t_##n);
+#define END_TIMER(m, n) com::watergate::common::metrics_utils::timed_metric(m, _t_##n);
 
 namespace com {
     namespace watergate {

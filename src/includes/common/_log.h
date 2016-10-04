@@ -31,12 +31,41 @@ namespace com {
 
                 shared_ptr<spd::logger> logger;
                 shared_ptr<spd::logger> console;
+                spd::level::level_enum log_level;
 
             public:
                 bool console_enabled;
 
                 ~_log() {
                     spd::drop_all();
+                }
+
+                bool check_lock_level(spd::level::level_enum level) {
+                    bool r = false;
+                    if (log_level == spd::level::trace) {
+                        return true;
+                    }
+                    if (log_level == spd::level::debug) {
+                        if (level != spd::level::trace)
+                            return true;
+                    }
+                    if (log_level == spd::level::info) {
+                        if (level != spd::level::trace && level != spd::level::debug)
+                            return true;
+                    }
+                    if (log_level == spd::level::warn) {
+                        if (level != spd::level::trace && level != spd::level::debug && level != spd::level::info)
+                            return true;
+                    }
+                    if (log_level == spd::level::err) {
+                        if (level == spd::level::err || level == spd::level::critical)
+                            return true;
+                    }
+                    if (log_level == spd::level::critical) {
+                        if (level == spd::level::critical)
+                            return true;
+                    }
+                    return r;
                 }
 
                 shared_ptr<spd::logger> get_console() {
@@ -53,7 +82,7 @@ namespace com {
                     Path *file = nullptr;
                     size_t size = 1 * 1024 * 1024;
                     int max_files = 3;
-                    spd::level::level_enum level = spd::level::level_enum::warn;
+                    log_level = spd::level::level_enum::warn;
                     string format = DEFAULT_LOG_PATTERN;
                     console_enabled = false;
 
@@ -116,7 +145,7 @@ namespace com {
                                 mode = mm;
                             }
                         }
-                        level = get_level(mode);
+                        log_level = get_level(mode);
 
                         const BasicConfigValue *fov = Config::get_value(CONST_CONFIG_PARAM_LOGGING_FORMAT, config);
                         if (NOT_NULL(fov)) {
@@ -128,7 +157,7 @@ namespace com {
 
                     }
                     string lf = file->get_path();
-                    init_c(lf, size, max_files, level, format);
+                    init_c(lf, size, max_files, log_level, format);
 
                     if (NOT_NULL(file)) {
                         delete (file);

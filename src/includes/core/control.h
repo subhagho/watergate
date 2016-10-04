@@ -113,6 +113,10 @@ namespace com {
                     return this->name;
                 }
 
+                const int get_max_priority() const {
+                    return priorities;
+                }
+
                 virtual void init(const _app *app, const ConfigValue *config) = 0;
             };
 

@@ -16,9 +16,14 @@
 #include "includes/common/_state.h"
 #include "control_errors.h"
 #include "includes/common/alarm.h"
+#include "includes/common/metrics.h"
 
 #define DEFAULT_MAX_TIMEOUT 30 * 1000
 #define DEFAULT_LOCK_LOOP_SLEEP_TIME 5
+#define METRIC_LOCK_PREFIX "metrics.lock.time"
+#define METRIC_LOCK_TIMEOUT_PREFIX "metrics.lock.timeouts"
+#define METRIC_QUOTA_PREFIX "metrics.quota.total"
+#define METRIC_QUOTA_REACHED_PREFIX "metrics.quota.exhausted"
 
 namespace com {
     namespace watergate {
@@ -53,6 +58,12 @@ namespace com {
                     return state;
                 }
 
+                string *get_metrics_name(string prefix, string name, int priority) {
+                    if (priority >= 0)
+                        return common_utils::format("%s::%s::priority_%d", prefix.c_str(), name.c_str(), priority);
+                    else
+                        return common_utils::format("%s::%s", prefix.c_str(), name.c_str());
+                }
             };
 
             class control_client : public control_def {
@@ -79,6 +90,9 @@ namespace com {
                 lock_acquire_enum lock(string name, int priority, double quota, long timeout, int *err) {
                     CHECK_STATE_AVAILABLE(state);
 
+                    string *m_name = get_metrics_name(METRIC_LOCK_PREFIX, name, priority);
+                    START_TIMER(m_name);
+
                     timer t;
                     t.start();
 
@@ -96,9 +110,12 @@ namespace com {
                         if (t.get_current_elapsed() > timeout && (priority != 0)) {
                             release_lock(name, priority);
                             *err = ERR_CORE_CONTROL_TIMEOUT;
-                            return Timeout;
+                            ret = Timeout;
+                            break;
                         }
                     }
+                    END_TIMER(*m_name, m_name);
+                    CHECK_AND_FREE(m_name);
                     return ret;
                 }
 

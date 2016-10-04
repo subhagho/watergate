@@ -7,12 +7,48 @@
 
 #include "_log.h"
 
-#define LOG_DEBUG(fmt, ...) com::watergate::common::log_utils::debug(*common_utils::format(fmt, ##__VA_ARGS__))
-#define LOG_INFO(fmt, ...) com::watergate::common::log_utils::info(*common_utils::format(fmt, ##__VA_ARGS__))
-#define LOG_WARN(fmt, ...) com::watergate::common::log_utils::warn(*common_utils::format(fmt, ##__VA_ARGS__))
-#define LOG_ERROR(fmt, ...) com::watergate::common::log_utils::error(*common_utils::format(fmt, ##__VA_ARGS__))
-#define LOG_CRITICAL(fmt, ...) com::watergate::common::log_utils::critical(*common_utils::format(fmt, ##__VA_ARGS__))
-#define TRACE(fmt, ...) com::watergate::common::log_utils::trace(*common_utils::format(fmt, ##__VA_ARGS__))
+#define LOG_DEBUG(fmt, ...) do { \
+    if (com::watergate::common::log_utils::check_log_level(spdlog::level::debug)) { \
+        string *s = com::watergate::common::common_utils::format(fmt, ##__VA_ARGS__); \
+        com::watergate::common::log_utils::debug(*s); \
+        CHECK_AND_FREE(s); \
+    } \
+} while(0)
+#define LOG_INFO(fmt, ...) do { \
+    if (com::watergate::common::log_utils::check_log_level(spdlog::level::info)) { \
+        string *s = com::watergate::common::common_utils::format(fmt, ##__VA_ARGS__); \
+        com::watergate::common::log_utils::info(*s); \
+        CHECK_AND_FREE(s); \
+    } \
+} while(0)
+#define LOG_WARN(fmt, ...) do { \
+    if (com::watergate::common::log_utils::check_log_level(spdlog::level::warn)) { \
+        string *s = com::watergate::common::common_utils::format(fmt, ##__VA_ARGS__); \
+        com::watergate::common::log_utils::warn(*s); \
+        CHECK_AND_FREE(s); \
+    } \
+} while(0)
+#define LOG_ERROR(fmt, ...) do { \
+    if (com::watergate::common::log_utils::check_log_level(spdlog::level::err)) { \
+        string *s = com::watergate::common::common_utils::format(fmt, ##__VA_ARGS__); \
+        com::watergate::common::log_utils::error(*s); \
+        CHECK_AND_FREE(s); \
+    } \
+} while(0)
+#define LOG_CRITICAL(fmt, ...) do { \
+    if (com::watergate::common::log_utils::check_log_level(spdlog::level::critical)) { \
+        string *s = com::watergate::common::common_utils::format(fmt, ##__VA_ARGS__); \
+        com::watergate::common::log_utils::critical(*s); \
+        CHECK_AND_FREE(s); \
+    } \
+} while(0)
+#define TRACE(fmt, ...) do { \
+    if (com::watergate::common::log_utils::check_log_level(spdlog::level::trace)) { \
+        string *s = com::watergate::common::common_utils::format(fmt, ##__VA_ARGS__); \
+        com::watergate::common::log_utils::trace(*s); \
+        CHECK_AND_FREE(s); \
+    } \
+} while(0)
 
 namespace spd = spdlog;
 
@@ -23,6 +59,10 @@ namespace com {
         namespace common {
             class log_utils {
             public:
+                static bool check_log_level(spd::level::level_enum level) {
+                    return LOG->check_lock_level(level);
+                }
+
                 static void critical(string mesg) {
                     if (NOT_NULL(LOG)) {
                         bool console_enabled = LOG->console_enabled;

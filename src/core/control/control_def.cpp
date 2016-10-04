@@ -4,7 +4,6 @@
 
 #include "includes/core/control_def.h"
 
-
 using namespace com::watergate::core;
 
 
@@ -42,6 +41,28 @@ void com::watergate::core::control_def::add_resource_lock(const _app *app, const
 
     semaphores.insert(make_pair(*sem->get_name(), sem));
 
+    for (int ii = 0; ii < sem->get_max_priority(); ii++) {
+        string *m = get_metrics_name(METRIC_LOCK_PREFIX, *sem->get_name(), ii);
+        if (!IS_EMPTY_P(m)) {
+            metrics_utils::create_metric(*m, AverageMetric, true);
+            CHECK_AND_FREE(m);
+        }
+        m = get_metrics_name(METRIC_LOCK_TIMEOUT_PREFIX, *sem->get_name(), ii);
+        if (!IS_EMPTY_P(m)) {
+            metrics_utils::create_metric(*m, BasicMetric, true);
+            CHECK_AND_FREE(m);
+        }
+    }
+    string *m = get_metrics_name(METRIC_QUOTA_PREFIX, *sem->get_name(), -1);
+    if (!IS_EMPTY_P(m)) {
+        metrics_utils::create_metric(*m, BasicMetric, true);
+        CHECK_AND_FREE(m);
+    }
+    m = get_metrics_name(METRIC_QUOTA_REACHED_PREFIX, *sem->get_name(), -1);
+    if (!IS_EMPTY_P(m)) {
+        metrics_utils::create_metric(*m, BasicMetric, true);
+        CHECK_AND_FREE(m);
+    }
     LOG_INFO("Created new semaphore handle. [name=%s]...", sem->get_name()->c_str());
 }
 
@@ -66,10 +87,18 @@ lock_acquire_enum com::watergate::core::control_client::try_lock(string name, in
     }
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
 
-    if (IS_BASE_PRIORITY(priority))
-        return sem_c->try_lock_base(quota, false);
-    else
-        return sem_c->try_lock(priority, false);
+    lock_acquire_enum r = lock_acquire_enum::None;
+
+    if (IS_BASE_PRIORITY(priority)) {
+        r = sem_c->try_lock_base(quota, false);
+        if (r == Locked) {
+            string *q_name = get_metrics_name(METRIC_QUOTA_PREFIX, name, -1);
+            com::watergate::common::metrics_utils::update(*q_name, quota);
+            CHECK_AND_FREE(q_name);
+        }
+    } else
+        r = sem_c->try_lock(priority, false);
+    return r;
 }
 
 lock_acquire_enum
@@ -83,10 +112,18 @@ com::watergate::core::control_client::wait_lock(string name, int priority, doubl
 
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
 
-    if (IS_BASE_PRIORITY(priority))
-        return sem_c->try_lock_base(quota, true);
-    else
-        return sem_c->try_lock(priority, true);
+    lock_acquire_enum r = lock_acquire_enum::None;
+
+    if (IS_BASE_PRIORITY(priority)) {
+        r = sem_c->try_lock_base(quota, true);
+        if (r == Locked) {
+            string *q_name = get_metrics_name(METRIC_QUOTA_PREFIX, name, -1);
+            com::watergate::common::metrics_utils::update(*q_name, quota);
+            CHECK_AND_FREE(q_name);
+        }
+    } else
+        r = sem_c->try_lock(priority, true);
+    return r;
 }
 
 bool com::watergate::core::control_client::release_lock(string name, int priority) {
@@ -111,51 +148,64 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
     timer t;
     t.start();
 
+
     lock_acquire_enum ret = wait_lock(name, priority, quota);
     if (ret == Error) {
         throw CONTROL_ERROR("Error acquiring base lock. [name=%s]", name.c_str());
-    } else if (ret == QuotaReached) {
-        return ret;
-    }
-    if (t.get_current_elapsed() > timeout && (priority != 0)) {
-        release_lock(name, priority);
-        *err = ERR_CORE_CONTROL_TIMEOUT;
-        return Timeout;
-    }
+    } else if (ret != QuotaReached) {
+        if (t.get_current_elapsed() > timeout && (priority != 0)) {
+            release_lock(name, priority);
+            *err = ERR_CORE_CONTROL_TIMEOUT;
+            ret = Timeout;
+        } else {
+            com::watergate::common::alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
+            for (int ii = priority - 1; ii >= 0; ii--) {
+                while (true) {
+                    if (t.get_current_elapsed() > timeout) {
+                        for (int jj = ii - 1; jj >= 0; jj--) {
+                            release_lock(name, jj);
+                        }
+                        *err = ERR_CORE_CONTROL_TIMEOUT;
+                        return Timeout;
+                    }
 
-    com::watergate::common::alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
-    for (int ii = priority - 1; ii >= 0; ii--) {
-        while (true) {
-            if (t.get_current_elapsed() > timeout) {
-                for (int jj = ii - 1; jj >= 0; jj--) {
-                    release_lock(name, jj);
+                    ret = this->try_lock(name, ii, quota);
+                    if (ret == Locked || ret == QuotaReached || ret == Error) {
+                        break;
+                    } else {
+                        if (!a.start()) {
+                            break;
+                        }
+                    }
                 }
-                *err = ERR_CORE_CONTROL_TIMEOUT;
-                return Timeout;
             }
 
-            ret = this->try_lock(name, ii, quota);
-            if (ret == Locked || ret == QuotaReached || ret == Error) {
-                break;
-            } else {
-                if (!a.start()) {
-                    break;
-                }
+            _semaphore *sem = get_lock(name);
+            if (IS_NULL(sem)) {
+                throw CONTROL_ERROR("No registered lock with specified name. [name=%s]", name.c_str());
             }
+
+            _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
+
+            t.stop();
+            long ts = t.get_elapsed();
+            sem_c->update_metrics(priority, ts);
         }
     }
 
-    _semaphore *sem = get_lock(name);
-    if (IS_NULL(sem)) {
-        throw CONTROL_ERROR("No registered lock with specified name. [name=%s]", name.c_str());
+    if (ret == Timeout) {
+        string *m = get_metrics_name(METRIC_LOCK_TIMEOUT_PREFIX, name, -1);
+        if (NOT_NULL(m)) {
+            com::watergate::common::metrics_utils::update(*m, 1);
+            CHECK_AND_FREE(m);
+        }
+    } else if (ret == QuotaReached) {
+        string *m = get_metrics_name(METRIC_QUOTA_REACHED_PREFIX, name, -1);
+        if (NOT_NULL(m)) {
+            com::watergate::common::metrics_utils::update(*m, 1);
+            CHECK_AND_FREE(m);
+        }
     }
-
-    _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
-
-    t.stop();
-    long ts = t.get_elapsed();
-    sem_c->update_metrics(priority, ts);
-
     return ret;
 }
 

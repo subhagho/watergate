@@ -58,7 +58,7 @@ void rund(control_client *control, int priority, thread_record *record) {
                 err = 0;
                 lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
                 tl.pause();
-                END_TIMER(METRIC_LOCK_TIME);
+                END_TIMER(METRIC_LOCK_TIME, METRIC_LOCK_TIME);
                 if (r == Locked && err == 0) {
                     LOG_INFO("Successfully acquired lock [thread=%s][name=%s][priority=%d][try=%d]", tid.c_str(),
                              CONTROL_NAME, priority,
@@ -119,7 +119,7 @@ void run(control_client *control, int priority, thread_record *record) {
                 err = 0;
                 lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
                 tl.pause();
-                END_TIMER(METRIC_LOCK_TIME);
+                END_TIMER(METRIC_LOCK_TIME, METRIC_LOCK_TIME);
 
                 if (r == Locked && err == 0) {
                     LOG_INFO("Successfully acquired lock [thread=%s][name=%s][priority=%d][try=%d]", tid.c_str(),
