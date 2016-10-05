@@ -113,6 +113,7 @@ Path *com::watergate::common::_env::get_work_dir(string name, mode_t mode) const
 
 com::watergate::common::_env::~_env() {
     this->state.set_state(Disposed);
+    metrics_utils::dump();
     metrics_utils::dispose();
 
     CHECK_AND_FREE(this->config);

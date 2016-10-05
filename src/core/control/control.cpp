@@ -248,8 +248,10 @@ bool com::watergate::core::_semaphore_client::release_lock_base() {
         t_ptr = t_rec->get_thread_ptr();
         if (t_ptr->priority_lock_index[BASE_PRIORITY]->id != counts[BASE_PRIORITY]->index) {
             t_ptr->priority_lock_index[BASE_PRIORITY]->id = -1;
-            LOG_WARN("Lock index out-of-sync. [thread=%s][priority=%d]", t_ptr->thread_id.c_str(), BASE_PRIORITY);
-            return false;
+            LOG_WARN("Lock index out-of-sync. [thread=%s][priority=%d][current index=%d][new index=%d]",
+                     t_ptr->thread_id.c_str(), BASE_PRIORITY, t_ptr->priority_lock_index[BASE_PRIORITY]->id,
+                     counts[BASE_PRIORITY]->index);
+            return true;
         }
     } else {
         string tid = thread_lock_record::get_current_thread();
@@ -284,16 +286,17 @@ bool com::watergate::core::_semaphore_client::release_lock_base() {
                 counts[BASE_PRIORITY]->acquired_time = 0;
                 counts[BASE_PRIORITY]->has_lock = false;
                 client->release_lock(ls, BASE_PRIORITY);
+                return true;
             } else {
                 throw CONTROL_ERROR("No semaphore found for the specified priority. [lock=%s][priority=%d]",
                                     this->name->c_str(),
                                     BASE_PRIORITY);
             }
         }
-        return true;
     } else if (ls == Expired) {
         LOG_DEBUG("Lock expired. [Lock should be retried]");
         reset_locks(BASE_PRIORITY);
+        return true;
     } else {
         LOG_DEBUG("Lock already released. [state=%d]", ls);
     }
@@ -310,8 +313,10 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority) {
         t_ptr = t_rec->get_thread_ptr();
         if (t_ptr->priority_lock_index[priority]->id != counts[priority]->index) {
             t_ptr->priority_lock_index[priority]->id = -1;
-            LOG_WARN("Lock index out-of-sync. [thread=%s][priority=%d]", t_ptr->thread_id.c_str(), priority);
-            return false;
+            LOG_WARN("Lock index out-of-sync. [thread=%s][priority=%d][current index=%d][new index=%d]",
+                     t_ptr->thread_id.c_str(), priority, t_ptr->priority_lock_index[priority]->id,
+                     counts[priority]->index);
+            return true;
         }
     } else {
         string tid = thread_lock_record::get_current_thread();
@@ -346,16 +351,17 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority) {
                 counts[priority]->acquired_time = 0;
                 counts[priority]->has_lock = false;
                 client->release_lock(ls, priority);
+                return true;
             } else {
                 throw CONTROL_ERROR("No semaphore found for the specified priority. [lock=%s][priority=%d]",
                                     this->name->c_str(),
                                     priority);
             }
         }
-        return true;
     } else if (ls == Expired) {
         LOG_DEBUG("Lock expired. [resetting all semaphores]");
         reset_locks(priority);
+        return true;
     } else {
         LOG_DEBUG("Lock already released. [state=%d]", ls);
     }

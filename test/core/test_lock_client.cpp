@@ -54,17 +54,19 @@ void com::watergate::tests::common::basic_lock_client::run() {
 
     usleep(5 * 1000);
     for (int ii = 0; ii < 8; ii++) {
-        int err = 0;
         while (true) {
+            int err = 0;
             lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, &err);
             if (r == Locked && err == 0) {
-                LOG_INFO("Successfully acquired lock [thread=%s][name=%s][priority=%d][try=%d]", tid.c_str(),
+                LOG_INFO("Successfully acquired lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d]", pid,
+                         tid.c_str(),
                          CONTROL_NAME, priority,
                          ii);
                 count++;
                 usleep(5 * 1000);
                 bool r = control->release(CONTROL_NAME, priority);
-                LOG_INFO("Successfully released lock [thread=%s][name=%s][priority=%d][index=%d]", tid.c_str(),
+                LOG_INFO("Successfully released lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d]", pid,
+                         tid.c_str(),
                          CONTROL_NAME, priority,
                          ii);
                 break;
