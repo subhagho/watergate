@@ -6,6 +6,7 @@
 
 #include "test_lock_client.h"
 #include "includes/common/alarm.h"
+#include "includes/common/timer.h"
 
 void com::watergate::tests::common::basic_lock_client::setup() {
     const Config *config = env->get_config();
@@ -52,18 +53,22 @@ void com::watergate::tests::common::basic_lock_client::run() {
     int count = 0;
     LOG_INFO("Running lock control client. [pid=%d]", pid);
 
-    usleep(5 * 1000);
+    timer t;
+
+    usleep((priority + 1) * 50 * 1000);
     for (int ii = 0; ii < 8; ii++) {
         while (true) {
             int err = 0;
-            lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, &err);
+            t.restart();
+            lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, 5000, &err);
+            t.pause();
             if (r == Locked && err == 0) {
                 LOG_INFO("Successfully acquired lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d]", pid,
                          tid.c_str(),
                          CONTROL_NAME, priority,
                          ii);
                 count++;
-                usleep(5 * 1000);
+                usleep((2 - priority) * 500 * 1000);
                 bool r = control->release(CONTROL_NAME, priority);
                 LOG_INFO("Successfully released lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d]", pid,
                          tid.c_str(),
@@ -82,7 +87,7 @@ void com::watergate::tests::common::basic_lock_client::run() {
         START_ALARM(sleep_timeout, b);
     }
 
-    LOG_DEBUG("[pid=%d][priority=%d] Finished executing....", pid, priority);
+    LOG_DEBUG("[pid=%d][priority=%d] Finished executing. [execution time=%lu]", pid, priority, t.get_current_elapsed());
 
     control->dump();
 }

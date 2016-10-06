@@ -84,7 +84,7 @@ namespace com {
         namespace core {
 
             enum lock_acquire_enum {
-                Locked = 0, Expired, Timeout, QuotaReached, QuotaAvailable, Error, None
+                Locked = 0, Expired, Retry, Timeout, QuotaReached, QuotaAvailable, Error, None
             };
 
             struct thread_lock_ptr {

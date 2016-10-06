@@ -300,13 +300,13 @@ namespace com {
                     }
                 }
 
-                lock_acquire_enum try_lock(int priority, bool wait);
+                lock_acquire_enum try_lock(int priority, int base_priority, bool wait);
 
-                lock_acquire_enum try_lock_base(double quota, bool wait);
+                lock_acquire_enum try_lock_base(double quota, int base_priority, bool wait);
 
-                bool release_lock(int priority);
+                bool release_lock(int priority, int base_priority);
 
-                bool release_lock_base();
+                bool release_lock_base(int base_priority);
 
                 void dump() {
                     LOG_DEBUG("**************[LOCK:%s:%d]**************", name->c_str(), getpid());

@@ -69,11 +69,11 @@ namespace com {
             class control_client : public control_def {
             private:
 
-                lock_acquire_enum try_lock(string name, int priority, double quota);
+                lock_acquire_enum try_lock(string name, int priority, int base_priority, double quota);
 
-                lock_acquire_enum wait_lock(string name, int priority, double quota);
+                lock_acquire_enum wait_lock(string name, int priority, int base_priority, double quota);
 
-                bool release_lock(string name, int priority);
+                bool release_lock(string name, int priority, int base_priority);
 
                 lock_acquire_enum lock_get(string name, int priority, double quota, long timeout, int *err);
 
@@ -108,7 +108,6 @@ namespace com {
                             break;
                         }
                         if (t.get_current_elapsed() > timeout && (priority != 0)) {
-                            release_lock(name, priority);
                             *err = ERR_CORE_CONTROL_TIMEOUT;
                             ret = Timeout;
                             break;
