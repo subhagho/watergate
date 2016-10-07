@@ -51,8 +51,8 @@ namespace com {
             struct _struct_priority_record {
                 int priority;
                 mutex priority_lock;
-                uint64_t count;
-                uint64_t index;
+                uint64_t count = 0;
+                uint64_t index = 0;
                 bool has_lock = false;
                 uint64_t acquired_time = 0;
             };

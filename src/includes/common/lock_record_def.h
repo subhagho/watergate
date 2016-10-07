@@ -203,6 +203,32 @@ namespace com {
                     return ptr;
                 }
             };
+
+            class record_utils {
+            public:
+                static string get_lock_acquire_enum_string(lock_acquire_enum value) {
+                    switch (value) {
+                        case lock_acquire_enum::Locked:
+                            return string("LOCKED");
+                        case lock_acquire_enum::None:
+                            return string("NONE");
+                        case lock_acquire_enum::Error:
+                            return string("ERROR");
+                        case lock_acquire_enum::Expired:
+                            return string("EXPIRED");
+                        case lock_acquire_enum::QuotaAvailable:
+                            return string("QUOTA AVAILABLE");
+                        case lock_acquire_enum::QuotaReached:
+                            return string("QUOTA REACHED");
+                        case lock_acquire_enum::Retry:
+                            return string("RETRY");
+                        case lock_acquire_enum::Timeout:
+                            return string("TIMEOUT");
+                        default:
+                            return string("UNKNOWN");
+                    }
+                }
+            };
         }
     }
 }

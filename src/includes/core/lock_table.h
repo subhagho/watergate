@@ -268,13 +268,13 @@ namespace com {
                     } while (0);
                 }
 
-                void update_quota(double quota) {
+                void update_quota(double quota, int priority) {
                     CHECK_STATE_AVAILABLE(state);
                     do {
                         std::lock_guard<std::mutex> guard(_update_lock);
                         lock_record->lock.quota_used += quota;
                         lock_record->lock.quota_total += quota;
-                        LOG_DEBUG("[priority=%d] Current quota used = %f", BASE_PRIORITY,
+                        LOG_DEBUG("[priority=%d] Current quota used = %f", priority,
                                   lock_record->lock.quota_used);
                     } while (0);
                 }

@@ -153,8 +153,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
             r = sem_trywait(lock);
         }
         if (r == 0) {
-            LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d][base priority=%d]", this->name->c_str(), priority,
-                      base_priority);
+
             counts[priority]->count++;
             counts[priority]->acquired_time = time_utils::now();
             counts[priority]->has_lock = true;
@@ -162,6 +161,11 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
             t_ptr->priority_lock_index[priority]->id = counts[priority]->index;
             t_ptr->priority_lock_index[priority]->acquired_time = time_utils::now();
             client->update_lock(priority);
+
+            LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d][base priority=%d][lock count=%d]",
+                      this->name->c_str(), priority,
+                      base_priority, counts[priority]->count);
+
             return Locked;
         } else {
             if (wait) {
@@ -221,8 +225,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double 
             r = sem_trywait(lock);
         }
         if (r == 0) {
-            LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d][base priority=%d]", this->name->c_str(),
-                      BASE_PRIORITY, base_priority);
+
             counts[BASE_PRIORITY]->count++;
             counts[BASE_PRIORITY]->acquired_time = time_utils::now();
             counts[BASE_PRIORITY]->has_lock = true;
@@ -230,7 +233,11 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double 
             t_ptr->priority_lock_index[BASE_PRIORITY]->id = counts[BASE_PRIORITY]->index;
             t_ptr->priority_lock_index[BASE_PRIORITY]->acquired_time = time_utils::now();
             client->update_lock(BASE_PRIORITY);
-            client->update_quota(quota);
+            client->update_quota(quota, base_priority);
+
+            LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d][base priority=%d][lock count=%d]",
+                      this->name->c_str(),
+                      BASE_PRIORITY, base_priority, counts[BASE_PRIORITY]->count);
 
             return Locked;
         } else if (errno == EAGAIN) {
@@ -283,11 +290,7 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
         t_ptr->priority_lock_index[BASE_PRIORITY]->id = -1;
         t_ptr->priority_lock_index[BASE_PRIORITY]->acquired_time = 0;
 
-        int count = 0;
-        for (int ii = BASE_PRIORITY; ii < priorities; ii++) {
-            count += counts[ii]->count;
-        }
-        if (count <= 0) {
+        if (counts[BASE_PRIORITY]->count <= 0) {
             sem_t *lock = get(BASE_PRIORITY);
             if (IS_VALID_SEM_PTR(lock)) {
                 if (sem_post(lock) != 0) {
@@ -308,6 +311,9 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
                                     this->name->c_str(),
                                     BASE_PRIORITY);
             }
+        } else {
+            LOG_DEBUG("Lock count pending. [priority=%d][base priority=%d][count=%d]", BASE_PRIORITY, base_priority,
+                      counts[BASE_PRIORITY]->count);
         }
     } else if (ls == Expired) {
         LOG_DEBUG("Lock expired. [Lock should be retried][priority=%d][base priority=%d]", BASE_PRIORITY,
@@ -315,8 +321,11 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
         reset_locks(BASE_PRIORITY);
         return true;
     } else {
-        LOG_DEBUG("Lock already released. [state=%d][priority=%d][base priority=%d]", ls, BASE_PRIORITY, base_priority);
+        LOG_DEBUG("Lock already released. [state=%s][priority=%d][base priority=%d]",
+                  record_utils::get_lock_acquire_enum_string(ls).c_str(), BASE_PRIORITY, base_priority);
     }
+    LOG_DEBUG("Invalid lock state. [state=%s][priority=%d][base priority=%d]",
+              record_utils::get_lock_acquire_enum_string(ls).c_str(), BASE_PRIORITY, base_priority);
     return false;
 }
 
@@ -351,11 +360,7 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
         t_ptr->priority_lock_index[priority]->id = -1;
         t_ptr->priority_lock_index[priority]->acquired_time = 0;
 
-        int count = 0;
-        for (int ii = priority; ii < priorities; ii++) {
-            count += counts[ii]->count;
-        }
-        if (count <= 0) {
+        if (counts[priority]->count <= 0) {
             sem_t *lock = get(priority);
             if (IS_VALID_SEM_PTR(lock)) {
                 if (sem_post(lock) != 0) {
@@ -377,14 +382,20 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
                         this->name->c_str(),
                         priority, base_priority);
             }
+        } else {
+            LOG_DEBUG("Lock count pending. [priority=%d][base priority=%d][count=%d]", priority, base_priority,
+                      counts[priority]->count);
         }
     } else if (ls == Expired) {
         LOG_DEBUG("Lock expired. [resetting all semaphores] [priority=%d][base priority=%d]", priority, base_priority);
         reset_locks(priority);
         return true;
     } else {
-        LOG_DEBUG("Lock already released. [state=%d][priority=%d][base priority=%d]", ls, priority, base_priority);
+        LOG_DEBUG("Lock already released. [state=%s][priority=%d][base priority=%d]",
+                  record_utils::get_lock_acquire_enum_string(ls).c_str(), priority, base_priority);
     }
+    LOG_DEBUG("Invalid lock state. [state=%s][priority=%d][base priority=%d]",
+              record_utils::get_lock_acquire_enum_string(ls).c_str(), priority, base_priority);
     return false;
 }
 

@@ -84,7 +84,7 @@ void com::watergate::tests::common::basic_lock_client::run() {
                           CONTROL_NAME, priority, ii, r);
         }
         bool b = false;
-        START_ALARM(sleep_timeout, b);
+        START_ALARM(sleep_timeout * (priority + 1), b);
     }
 
     LOG_DEBUG("[pid=%d][priority=%d] Finished executing. [execution time=%lu]", pid, priority, t.get_current_elapsed());

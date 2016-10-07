@@ -19,7 +19,7 @@
 #include "includes/common/metrics.h"
 
 #define DEFAULT_MAX_TIMEOUT 30 * 1000
-#define DEFAULT_LOCK_LOOP_SLEEP_TIME 5
+#define DEFAULT_LOCK_LOOP_SLEEP_TIME 10
 #define METRIC_LOCK_PREFIX "metrics.lock.time"
 #define METRIC_LOCK_TIMEOUT_PREFIX "metrics.lock.timeouts"
 #define METRIC_QUOTA_PREFIX "metrics.quota.total"
