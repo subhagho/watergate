@@ -183,8 +183,9 @@ TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]"
                 LOG_ERROR("Uh-Oh! fork() failed. [index=%d]", ii);
                 exit(1);
             case 0:
-                LOG_INFO("Launching child process. [index=%d]", ii);
-                execl(proc.c_str(), proc.c_str(), c_param.c_str(), p.c_str(), (char *) NULL);
+                LOG_INFO("Launching process [index=%d]. [%s %s %s]", ii, proc.c_str(), c_param.c_str(), p.c_str());
+
+                execl(proc.c_str(), proc.c_str(), c_param.c_str(), p.c_str(), (char *) nullptr);
                 LOG_ERROR("Uh-Oh! execl() failed! [index=%d]", ii);/* execl doesn't return unless there's an error */
                 exit(1);
             default:
