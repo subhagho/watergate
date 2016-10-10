@@ -8,6 +8,8 @@
 #include "includes/common/alarm.h"
 #include "includes/common/timer.h"
 
+#define REQUIRE _assert
+
 void com::watergate::tests::common::basic_lock_client::setup() {
     const Config *config = env->get_config();
     assert(NOT_NULL(config));
