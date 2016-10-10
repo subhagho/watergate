@@ -70,10 +70,12 @@ void com::watergate::tests::common::basic_lock_client::run() {
                 count++;
                 usleep((2 - priority) * 500 * 1000);
                 bool r = control->release(CONTROL_NAME, priority);
-                LOG_INFO("Successfully released lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d]", pid,
-                         tid.c_str(),
-                         CONTROL_NAME, priority,
-                         ii);
+                if (r) {
+                    LOG_INFO("Successfully released lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d]", pid,
+                             tid.c_str(),
+                             CONTROL_NAME, priority,
+                             ii);
+                }
                 break;
             } else if (err != 0) {
                 LOG_ERROR("Filed to acquired lock [thread=%s][name=%s][priority=%d][try=%d][response=%d][error=%d]",
@@ -85,6 +87,7 @@ void com::watergate::tests::common::basic_lock_client::run() {
         }
         bool b = false;
         START_ALARM(sleep_timeout * (priority + 1), b);
+        REQUIRE(b);
     }
 
     LOG_DEBUG("[pid=%d][priority=%d] Finished executing. [execution time=%lu]", pid, priority, t.get_current_elapsed());
