@@ -18,7 +18,7 @@
 
 #define LOCK_ERROR(fmt, ...) lock_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 #define LOCK_ERROR_PTR(fmt, ...) new lock_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
-#define EXCLUSIVE_LOCK_PREFIX "/locks::"
+#define EXCLUSIVE_LOCK_PREFIX "/EL::"
 
 #define CHECK_SEMAPHORE_PTR(s, name) do { \
     if (IS_NULL(s) || s == SEM_FAILED) { \

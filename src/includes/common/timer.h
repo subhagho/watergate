@@ -6,6 +6,9 @@
 #define WATERGATE_TIMER_H_H
 
 #include <chrono>
+#include <iomanip>
+#include <ctime>
+#include <sstream>
 
 #include "common.h"
 #include "common_utils.h"
@@ -29,6 +32,28 @@ namespace com {
                             system_clock::now().time_since_epoch()
                     );
                     return (nt.count() - start);
+                }
+
+                static string get_time_string(long ts, string fmt) {
+                    if (ts >= 0) {
+                        long t = ts / 1000;
+                        auto tm = *std::localtime(&t);
+
+                        std::ostringstream oss;
+                        oss << std::put_time(&tm, fmt.c_str());
+                        string str = string(oss.str());
+
+                        long ms = ts % 1000;
+                        str.append(".");
+                        str.append(to_string(ms));
+
+                        return str;
+                    }
+                    return EMPTY_STRING;
+                }
+
+                static string get_time_string(uint64_t ts) {
+                    return get_time_string(ts, DEFAULT_TIMESTAMP_FORMAT);
                 }
             };
 

@@ -129,7 +129,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
         throw CONTROL_ERROR("No lock record found for thread.[thread=%s]", tid.c_str());
     }
 
-    lock_acquire_enum ls = check_lock_state(priority);
+    lock_acquire_enum ls = client->has_valid_lock(priority);
     if (ls == Locked) {
         counts[priority]->count++;
         t_rec->increment(priority);
@@ -153,8 +153,6 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
         if (r == 0) {
 
             counts[priority]->count++;
-            counts[priority]->acquired_time = time_utils::now();
-            counts[priority]->has_lock = true;
             t_rec->increment(priority);
             t_ptr->priority_lock_index[priority]->id = counts[priority]->index;
             t_ptr->priority_lock_index[priority]->acquired_time = time_utils::now();
@@ -199,7 +197,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double 
         throw CONTROL_ERROR("No lock record found for thread.[thread=%s]", tid.c_str());
     }
 
-    lock_acquire_enum ls = client->check_and_lock(BASE_PRIORITY, quota);
+    lock_acquire_enum ls = client->check_and_lock(quota);
     if (ls == Locked) {
         counts[BASE_PRIORITY]->count++;
         t_rec->increment(BASE_PRIORITY);
@@ -225,8 +223,6 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double 
         if (r == 0) {
 
             counts[BASE_PRIORITY]->count++;
-            counts[BASE_PRIORITY]->acquired_time = time_utils::now();
-            counts[BASE_PRIORITY]->has_lock = true;
             t_rec->increment(BASE_PRIORITY);
             t_ptr->priority_lock_index[BASE_PRIORITY]->id = counts[BASE_PRIORITY]->index;
             t_ptr->priority_lock_index[BASE_PRIORITY]->acquired_time = time_utils::now();
@@ -302,8 +298,6 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
                           BASE_PRIORITY, base_priority);
 
 
-                counts[BASE_PRIORITY]->acquired_time = 0;
-                counts[BASE_PRIORITY]->has_lock = false;
                 client->release_lock(ls, BASE_PRIORITY);
                 return true;
             } else {
@@ -353,7 +347,7 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
         throw CONTROL_ERROR("No lock record found for thread.[thread=%s]", tid.c_str());
     }
 
-    lock_acquire_enum ls = check_lock_state(priority);
+    lock_acquire_enum ls = client->has_valid_lock(priority);
     if (ls == Locked) {
         counts[priority]->count--;
         t_rec->decremet(priority);
@@ -373,8 +367,6 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
                 LOG_DEBUG("Released semaphore [name=%s][priority=%d]", this->name->c_str(),
                           priority);
 
-                counts[priority]->acquired_time = 0;
-                counts[priority]->has_lock = false;
                 client->release_lock(ls, priority);
                 return true;
             } else {

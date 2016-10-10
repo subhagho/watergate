@@ -24,7 +24,7 @@
     },
     "test-lock-client": {
       "process" : "/work/dev/wookler/watergate/test/cmake/test_lock_client",
-      "process.count": "20",
+      "process.count": "30",
       "sleep.time": "30",
       "lock.tries": "100"
     }

@@ -53,8 +53,6 @@ namespace com {
                 mutex priority_lock;
                 uint64_t count = 0;
                 uint64_t index = 0;
-                bool has_lock = false;
-                uint64_t acquired_time = 0;
             };
 
             class _semaphore {
@@ -178,25 +176,8 @@ namespace com {
                 vector<_struct_priority_record *> counts;
                 unordered_map<string, thread_lock_record *> threads;
 
-
-                lock_acquire_enum check_lock_state(int priority) {
-                    _struct_priority_record *counter = counts[priority];
-                    if (counter->has_lock) {
-                        uint64_t now = time_utils::now();
-                        uint64_t v_time = counter->acquired_time + client->get_lock_lease_time();
-                        if (now <= v_time) {
-                            return Locked;
-                        } else {
-                            return Expired;
-                        }
-                    }
-                    return None;
-                }
-
                 void reset_locks(int priority) {
                     counts[priority]->count = 0;
-                    counts[priority]->acquired_time = 0;
-                    counts[priority]->has_lock = false;
 
                     reset_thread_locks(priority);
                     client->release_lock(Expired, priority);

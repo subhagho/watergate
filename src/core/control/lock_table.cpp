@@ -18,9 +18,6 @@ void com::watergate::core::lock_table::create(string name, resource_def *resourc
 
         lock = new exclusive_lock(&l_name);
         lock->create();
-        if (server) {
-            lock->reset();
-        }
 
         mode_t mode = O_CREAT | O_RDWR;
         if (!server) {
@@ -50,29 +47,6 @@ void com::watergate::core::lock_table::create(string name, resource_def *resourc
             throw te;
         }
 
-        _lock_table *ptr = (_lock_table *) mem_ptr;
-        for (int ii = 0; ii < DEFAULT_MAX_RECORDS; ii++) {
-            ptr->free_indexes[ii] = ii;
-            _lock_record *rec = &ptr->records[ii];
-            RESET_RECORD(rec);
-            rec->index = ii;
-        }
-
-        if (server) {
-            long lt = resource->get_lease_time();
-            if (lt > 0) {
-                ptr->lock_lease_time = lt;
-            } else {
-                ptr->lock_lease_time = DEFAULT_LEASE_TIME;
-            }
-
-            double quota = resource->get_resource_quota();
-            if (quota > 0.0) {
-                ptr->quota = quota;
-            } else {
-                ptr->quota = DEFAULT_QUOTA;
-            }
-        }
         state.set_state(Available);
     } catch (const exception &e) {
         lock_table_error lte = LOCK_TABLE_ERROR("Error creating Lock Table. [name=%s][error=%s]",
@@ -97,8 +71,8 @@ void com::watergate::core::lock_table::remove_record(int index) {
     _lock_table *ptr = (_lock_table *) mem_ptr;
 
     if (!lock->wait_lock()) {
-        lock_table_error te = LOCK_TABLE_ERROR("Error getting lock to update table. [name=%s][errno=%d]", name.c_str(),
-                                               errno);
+        lock_table_error te = LOCK_TABLE_ERROR("Error getting lock to update table. [name=%s][error=%s]", name.c_str(),
+                                               strerror(errno));
         LOG_CRITICAL(te.what());
         state.set_error(&te);
 
@@ -123,9 +97,9 @@ void com::watergate::core::lock_table::remove_record(int index) {
 
 
     if (!lock->release_lock()) {
-        lock_table_error te = LOCK_TABLE_ERROR("Error releasing lock for update table. [name=%s][errno=%d]",
+        lock_table_error te = LOCK_TABLE_ERROR("Error releasing lock for update table. [name=%s][error=%s]",
                                                name.c_str(),
-                                               errno);
+                                               strerror(errno));
         LOG_CRITICAL(te.what());
         state.set_error(&te);
 
@@ -137,8 +111,8 @@ _lock_record *com::watergate::core::lock_table::create_new_record(string app_nam
 
     _lock_table *ptr = (_lock_table *) mem_ptr;
     if (!lock->wait_lock()) {
-        lock_table_error te = LOCK_TABLE_ERROR("Error getting lock to update table. [name=%s][errno=%d]", name.c_str(),
-                                               errno);
+        lock_table_error te = LOCK_TABLE_ERROR("Error getting lock to update table. [name=%s][error=%s]", name.c_str(),
+                                               strerror(errno));
         LOG_CRITICAL(te.what());
         state.set_error(&te);
 
@@ -153,9 +127,9 @@ _lock_record *com::watergate::core::lock_table::create_new_record(string app_nam
         }
     }
     if (!lock->release_lock()) {
-        lock_table_error te = LOCK_TABLE_ERROR("Error releasing lock for update table. [name=%s][errno=%d]",
+        lock_table_error te = LOCK_TABLE_ERROR("Error releasing lock for update table. [name=%s][error=%s]",
                                                name.c_str(),
-                                               errno);
+                                               strerror(errno));
         LOG_CRITICAL(te.what());
         state.set_error(&te);
 

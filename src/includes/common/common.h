@@ -31,6 +31,8 @@
 #define RETURN_ERROR_UNKNOWN -1
 
 #define DEFAULT_DATETIME_FORMAT "%Y-%m-%d %H:%M"
+#define DEFAULT_TIMESTAMP_FORMAT "%Y-%m-%d %X"
+
 #define DEFAULT_DATETIME_BUFFSIZE 32
 
 using namespace std;

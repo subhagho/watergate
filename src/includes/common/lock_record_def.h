@@ -9,6 +9,7 @@
 #include <thread>
 #include <sstream>
 #include <unordered_map>
+#include <semaphore.h>
 
 #include "includes/common/log_utils.h"
 #include "includes/common/common.h"
@@ -19,19 +20,20 @@
 #define MAX_STRING_SIZE 64
 #define FREE_INDEX_USED -999
 
+#ifndef PSEMNAMLEN // For cases where the POSIX sem header is not visible.
+#define PSEMNAMLEN 31
+#endif //PSEMNAMLEN
+
 #define BASE_PRIORITY 0
 
 #define IS_BASE_PRIORITY(p) (p == BASE_PRIORITY)
 
-#define RESET_RECORD(rec) do {\
-    rec->used = false; \
-    memset(&rec->app, 0, sizeof(_app_handle)); \
-    memset(&rec->lock, 0, sizeof(_lock_handle)); \
-} while(0)
+#define RESET_RECORD(rec) com::watergate::core::record_utils::reset_record(rec)
 
 typedef struct {
     char app_name[MAX_STRING_SIZE];
     char app_id[MAX_STRING_SIZE];
+    char table_lock_name[PSEMNAMLEN + 1];
     pid_t proc_id;
     uint64_t register_time = 0;
     uint64_t last_active_ts = 0;
@@ -235,6 +237,30 @@ namespace com {
                             return string("TIMEOUT");
                         default:
                             return string("UNKNOWN");
+                    }
+                }
+
+                static void reset_record(_lock_record *record) {
+                    _assert(NOT_NULL(record));
+
+                    record->used = false;
+                    record->index = -1;
+
+                    // Reset App handle
+                    record->app.proc_id = 0;
+                    memset(record->app.app_id, 0, MAX_STRING_SIZE);
+                    memset(record->app.app_name, 0, MAX_STRING_SIZE);
+                    record->app.last_active_ts = 0;
+                    record->app.register_time = 0;
+                    memset(record->app.table_lock_name, 0, PSEMNAMLEN + 1);
+
+                    // Reset Lock handles.
+                    record->lock.quota_total = 0;
+                    record->lock.quota_used = 0;
+
+                    for (int ii = 0; ii < MAX_PRIORITY_ALLOWED; ii++) {
+                        record->lock.locks[ii].acquired_time = 0;
+                        record->lock.locks[ii].has_lock = false;
                     }
                 }
             };
