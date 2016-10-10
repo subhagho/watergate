@@ -31,7 +31,7 @@ namespace com {
         namespace core {
             class lock_error : public base_error {
             public:
-                lock_error(char const *file, const int line, string *mesg) : base_error(file, line,
+                lock_error(char const *file, const int line, string mesg) : base_error(file, line,
                                                                                         CONST_LOCK_ERROR_PREFIX,
                                                                                         mesg) {
                 }

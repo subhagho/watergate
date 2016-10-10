@@ -33,7 +33,7 @@ namespace com {
         namespace common {
             class config_error : public base_error {
             public:
-                config_error(char const *file, const int line, string *mesg) : base_error(file, line,
+                config_error(char const *file, const int line, string mesg) : base_error(file, line,
                                                                                           CONST_CONFIG_ERROR_PREFIX,
                                                                                           mesg) {
                 }

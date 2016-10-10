@@ -53,7 +53,7 @@ namespace com {
                 }
 
                 static string concat_path(const string path, const string dir) {
-                    return *common_utils::format("%s%s%s", path.data(), CONST_PATH_DELIM, dir.data());
+                    return common_utils::format("%s%s%s", path.data(), CONST_PATH_DELIM, dir.data());
                 }
 
                 static bool is_file(const char *path) {
@@ -130,7 +130,7 @@ namespace com {
 
                     string tp = TEMP_DIR;
 
-                    string p = *common_utils::format("%s%s%s%s%s", tp.data(), CONST_PATH_DELIM, CONST_DEFAULT_DIRECTORY,
+                    string p = common_utils::format("%s%s%s%s%s", tp.data(), CONST_PATH_DELIM, CONST_DEFAULT_DIRECTORY,
                                                      CONST_PATH_DELIM, name.data());
 
                     p = cannonical_path(p);
@@ -159,10 +159,10 @@ namespace com {
 
                     string file;
                     if (!ext.empty()) {
-                        file = *common_utils::format("%s%s%s.%s", path.data(), CONST_PATH_DELIM, name.data(),
+                        file = common_utils::format("%s%s%s.%s", path.data(), CONST_PATH_DELIM, name.data(),
                                                      ext.data());
                     } else {
-                        file = *common_utils::format("%s%s%s", path.data(), CONST_PATH_DELIM, name.data());
+                        file = common_utils::format("%s%s%s", path.data(), CONST_PATH_DELIM, name.data());
                     }
 
                     file = cannonical_path(file);

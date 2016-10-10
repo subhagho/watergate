@@ -42,7 +42,7 @@ namespace com {
         namespace core {
             class control_error : public base_error {
             public:
-                control_error(char const *file, const int line, string *mesg) : base_error(file, line,
+                control_error(char const *file, const int line, string mesg) : base_error(file, line,
                                                                                            CONST_CONTROL_ERROR_PREFIX,
                                                                                            mesg) {
                 }
@@ -329,6 +329,14 @@ namespace com {
                         }
                     }
                     LOG_DEBUG("**************[LOCK:%s:%d]**************", name->c_str(), getpid());
+                }
+
+                void test_assert() {
+                    if (!IS_EMPTY(counts)) {
+                        for (int ii = 0; ii < priorities; ii++) {
+                            _assert(counts[ii]->count == 0);
+                        }
+                    }
                 }
             };
         }

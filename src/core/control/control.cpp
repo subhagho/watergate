@@ -78,15 +78,14 @@ void com::watergate::core::_semaphore::create(const _app *app, const ConfigValue
 }
 
 void com::watergate::core::_semaphore::create_sem(int index) {
-    string *sem_name = common_utils::format("%s::%s::%d", CONTROL_LOCK_PREFIX, name->c_str(), index);
+    string sem_name = common_utils::format("%s::%s::%d", CONTROL_LOCK_PREFIX, name->c_str(), index);
 
-    sem_t *ptr = sem_open(sem_name->c_str(), O_CREAT, mode, max_concurrent);
+    sem_t *ptr = sem_open(sem_name.c_str(), O_CREAT, mode, max_concurrent);
     if (!IS_VALID_SEM_PTR(ptr)) {
-        throw CONTROL_ERROR("Error creating semaphore. [name=%s][errno=%s]", sem_name->c_str(), strerror(errno));
+        throw CONTROL_ERROR("Error creating semaphore. [name=%s][errno=%s]", sem_name.c_str(), strerror(errno));
     }
 
     semaphores[index] = ptr;
-    CHECK_AND_FREE(sem_name);
 }
 
 void com::watergate::core::_semaphore::delete_sem(int index) {
@@ -96,11 +95,10 @@ void com::watergate::core::_semaphore::delete_sem(int index) {
                 LOG_ERROR("Error disposing semaphore. [index=%s][errno=%s]", index, strerror(errno));
             }
         } else {
-            string *sem_name = common_utils::format("%s::%s::%d", CONTROL_LOCK_PREFIX, name->c_str(), index);
-            if (sem_unlink(sem_name->c_str()) != 0) {
+            string sem_name = common_utils::format("%s::%s::%d", CONTROL_LOCK_PREFIX, name->c_str(), index);
+            if (sem_unlink(sem_name.c_str()) != 0) {
                 LOG_ERROR("Error disposing semaphore. [index=%s][errno=%s]", index, strerror(errno));
             }
-            CHECK_AND_FREE(sem_name);
         }
         semaphores[index] = nullptr;
     }
@@ -287,10 +285,11 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
     if (ls == Locked) {
         counts[BASE_PRIORITY]->count--;
         t_rec->decremet(BASE_PRIORITY);
-        t_ptr->priority_lock_index[BASE_PRIORITY]->id = -1;
-        t_ptr->priority_lock_index[BASE_PRIORITY]->acquired_time = 0;
 
         if (counts[BASE_PRIORITY]->count <= 0) {
+            t_ptr->priority_lock_index[BASE_PRIORITY]->id = -1;
+            t_ptr->priority_lock_index[BASE_PRIORITY]->acquired_time = 0;
+
             sem_t *lock = get(BASE_PRIORITY);
             if (IS_VALID_SEM_PTR(lock)) {
                 if (sem_post(lock) != 0) {
@@ -301,6 +300,7 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
                 }
                 LOG_DEBUG("Released semaphore [name=%s][priority=%d][base priority=%d]", this->name->c_str(),
                           BASE_PRIORITY, base_priority);
+
 
                 counts[BASE_PRIORITY]->acquired_time = 0;
                 counts[BASE_PRIORITY]->has_lock = false;
@@ -357,10 +357,11 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
     if (ls == Locked) {
         counts[priority]->count--;
         t_rec->decremet(priority);
-        t_ptr->priority_lock_index[priority]->id = -1;
-        t_ptr->priority_lock_index[priority]->acquired_time = 0;
 
         if (counts[priority]->count <= 0) {
+            t_ptr->priority_lock_index[priority]->id = -1;
+            t_ptr->priority_lock_index[priority]->acquired_time = 0;
+
             sem_t *lock = get(priority);
             if (IS_VALID_SEM_PTR(lock)) {
                 if (sem_post(lock) != 0) {

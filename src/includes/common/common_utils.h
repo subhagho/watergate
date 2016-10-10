@@ -203,7 +203,7 @@ namespace com {
                     return get_time(time, DEFAULT_DATETIME_FORMAT);
                 }
 
-                static std::string *format(const string fmt_str, ...) {
+                static std::string format(const string fmt_str, ...) {
                     int final_n, n =
                             ((int) fmt_str.size()) * 2; /* Reserve two times as much as the length of the fmt_str */
                     std::string str;
@@ -220,7 +220,7 @@ namespace com {
                         else
                             break;
                     }
-                    string *ss = new std::string(formatted.get());
+                    string ss = std::string(formatted.get());
 
                     return ss;
                 }

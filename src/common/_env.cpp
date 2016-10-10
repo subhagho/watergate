@@ -6,7 +6,7 @@
 
 com::watergate::common::_log *LOG = nullptr;
 
-void com::watergate::common::_env::create(string filename) {
+void com::watergate::common::_env::create(string filename, string app_name) {
     try {
         this->config = new Config();
         this->config->create(filename);
@@ -15,9 +15,11 @@ void com::watergate::common::_env::create(string filename) {
         if (NOT_NULL(e_node)) {
             const ParamConfigValue *e_params = Config::get_params(e_node);
             if (NOT_NULL(e_params)) {
-                const string app_name = e_params->get_string(CONST_CONFIG_ENV_PARAM_APPNAME);
                 if (IS_EMPTY(app_name)) {
-                    throw ERROR_MISSING_CONFIG(CONST_CONFIG_ENV_PARAM_APPNAME);
+                    app_name = e_params->get_string(CONST_CONFIG_ENV_PARAM_APPNAME);
+                    if (IS_EMPTY(app_name)) {
+                        throw ERROR_MISSING_CONFIG(CONST_CONFIG_ENV_PARAM_APPNAME);
+                    }
                 }
                 this->app = new _app(app_name);
                 string appdir = this->app->get_app_directory();

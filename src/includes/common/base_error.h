@@ -17,9 +17,12 @@
 
 #define _assert(e) do {\
     if (!(e)) { \
+        LOG_ERROR("Assertion failed. [%s][%s]", #e, __PRETTY_FUNCTION__); \
         throw BASE_ERROR("Assertion failed. [%s][%s]", #e, __PRETTY_FUNCTION__); \
     } \
-} while(0)
+} while(0);
+
+#define ASSERT _assert
 
 namespace com {
     namespace watergate {
@@ -47,19 +50,19 @@ namespace com {
                 }
 
             protected:
-                base_error(char const *file, const int line, const string prefix, string *mesg) {
+                base_error(char const *file, const int line, const string prefix, string mesg) {
                     this->file = string(file);
                     this->lineno = line;
-                    this->mesg = common_utils::format("%s %s", prefix.c_str(), mesg->c_str());
+                    this->mesg = new string(common_utils::format("%s %s", prefix.c_str(), mesg.c_str()));
 
                     set_r_mesg();
                 }
 
             public:
-                base_error(char const *file, const int line, string *mesg) {
+                base_error(char const *file, const int line, string mesg) {
                     this->file = file;
                     this->lineno = line;
-                    this->mesg = mesg;
+                    this->mesg = new string(mesg);
 
                     set_r_mesg();
                 }
@@ -82,7 +85,7 @@ namespace com {
 
             class not_found_error : public base_error {
             public:
-                not_found_error(char const *file, const int line, string *mesg) : base_error(file, line,
+                not_found_error(char const *file, const int line, string mesg) : base_error(file, line,
                                                                                              CONST_NOTF_ERROR_PREFIX,
                                                                                              mesg) {
                 }

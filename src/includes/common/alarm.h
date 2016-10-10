@@ -12,15 +12,17 @@
 #include "_callback.h"
 #include "base_error.h"
 
-#define START_ALARM(t, r) do {\
+#define START_ALARM(t) do {\
     com::watergate::common::alarm a(t); \
-    r = a.start(); \
-} while(0)
+    bool r = a.start(); \
+    _assert(r); \
+} while(0);
 
-#define START_ALARM_WITH_CALLBACK(t, c, r) do {\
+#define START_ALARM_WITH_CALLBACK(t, c) do {\
     com::watergate::common::alarm a(t, c); \
-    r = a.start(); \
-} while(0)
+    bool r = a.start(); \
+    _assert(r); \
+} while(0);
 
 namespace com {
     namespace watergate {

@@ -70,7 +70,11 @@ namespace com {
             public:
                 ~_env();
 
-                void create(string filename);
+                void create(string filename) {
+                    create(filename, EMPTY_STRING);
+                }
+
+                void create(string filename, string app_name);
 
                 const _state get_state() const {
                     return state;

@@ -87,14 +87,13 @@ void com::watergate::tests::common::basic_lock_client::run() {
                 LOG_ERROR("Filed to acquired lock [thread=%s][name=%s][priority=%d][try=%d][response=%d]", tid.c_str(),
                           CONTROL_NAME, priority, ii, r);
         }
-        bool b = false;
-        START_ALARM(sleep_timeout * (priority + 1), b);
-        REQUIRE(b);
+        START_ALARM(sleep_timeout * (priority + 1));
     }
 
     LOG_DEBUG("[pid=%d][priority=%d] Finished executing. [execution time=%lu]", pid, priority, t.get_current_elapsed());
 
     control->dump();
+    control->test_assert();
 }
 
 int main(int argc, char *argv[]) {
@@ -121,15 +120,16 @@ int main(int argc, char *argv[]) {
 
         _env *env = nullptr;
         option::Option o = options[CONFIG];
-        if (o && o.count() > 0) {
-            if (o.arg) {
-                string configf = o.arg;
-                if (!IS_EMPTY(configf)) {
-                    env = new _env();
-                    env->create(configf);
-                } else
-                    throw CONFIG_ERROR("NULL/empty configuration file path specified.");
-            }
+        option::Option i = options[INDEX];
+        if (o && o.count() > 0 && i && i.count() > 0) {
+            string configf = o.arg;
+            int index = atoi(i.arg);
+            if (!IS_EMPTY(configf) && index >= 0) {
+                env = new _env();
+                string pname = com::watergate::common::common_utils::format("basic_lock_client.%d", index);
+                env->create(configf, pname);
+            } else
+                throw CONFIG_ERROR("NULL/empty configuration file path specified.");
         } else {
             option::printUsage(std::cout, usage);
             return -1;

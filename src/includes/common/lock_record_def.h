@@ -185,6 +185,15 @@ namespace com {
                     }
                 }
 
+                void test_assert() {
+                    _assert(NOT_NULL(thread_ptr));
+                    if (NOT_NULL(p_counts)) {
+                        for (int ii = 0; ii < this->priorities; ii++) {
+                            _assert(p_counts[ii] == 0);
+                        }
+                    }
+                }
+
                 static std::string get_current_thread() {
                     std::stringstream ss;
                     ss << std::this_thread::get_id();

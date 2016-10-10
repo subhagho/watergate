@@ -58,7 +58,7 @@ namespace com {
                     return state;
                 }
 
-                string *get_metrics_name(string prefix, string name, int priority) {
+                string get_metrics_name(string prefix, string name, int priority) {
                     if (priority >= 0)
                         return common_utils::format("%s::%s::priority_%d", prefix.c_str(), name.c_str(), priority);
                     else
@@ -90,7 +90,7 @@ namespace com {
                 lock_acquire_enum lock(string name, int priority, double quota, uint64_t timeout, int *err) {
                     CHECK_STATE_AVAILABLE(state);
 
-                    string *m_name = get_metrics_name(METRIC_LOCK_PREFIX, name, priority);
+                    string m_name = get_metrics_name(METRIC_LOCK_PREFIX, name, priority);
                     START_TIMER(m_name);
 
                     timer t;
@@ -113,8 +113,7 @@ namespace com {
                             break;
                         }
                     }
-                    END_TIMER(*m_name, m_name);
-                    CHECK_AND_FREE(m_name);
+                    END_TIMER(m_name, m_name);
                     return ret;
                 }
 
@@ -150,6 +149,19 @@ namespace com {
                         }
                     }
                     LOG_DEBUG("**************[REGISTERED CONTROLS:%d]**************", getpid());
+                }
+
+                void test_assert() {
+                    if (!IS_EMPTY(semaphores)) {
+                        unordered_map<string, _semaphore *>::iterator iter;
+                        for (iter = semaphores.begin(); iter != semaphores.end(); iter++) {
+                            _semaphore *sem = iter->second;
+                            if (NOT_NULL(sem)) {
+                                _semaphore_client *c = static_cast<_semaphore_client *>(sem);
+                                c->test_assert();
+                            }
+                        }
+                    }
                 }
             };
         }

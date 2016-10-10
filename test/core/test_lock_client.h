@@ -58,7 +58,7 @@ namespace com {
 }
 
 enum optionIndex {
-    UNKNOWN, HELP, CONFIG, PRIORITY
+    UNKNOWN, HELP, CONFIG, PRIORITY, INDEX
 };
 const option::Descriptor usage[] =
         {
@@ -66,6 +66,7 @@ const option::Descriptor usage[] =
                 {HELP,                 0, "",  "help",     option::Arg::None,     "  --help  \tPrint usage and exit."},
                 {CONFIG,               0, "c", "config",   ExtendedArg::Required, "  --config=<filename>, -c <filename> \tPath to configuration file."},
                 {PRIORITY,             0, "p", "priority", ExtendedArg::Numeric,  "  --priority=<priority>, -p <priority> \tPriority to acquire locks."},
+                {INDEX,                0, "i", "index",    ExtendedArg::Numeric,  "  --index=<index>, -p <index> \tIndex of the launched instance."},
                 {0,                    0, 0,   0,          0,                     0}
         };
 

@@ -42,26 +42,22 @@ void com::watergate::core::control_def::add_resource_lock(const _app *app, const
     semaphores.insert(make_pair(*sem->get_name(), sem));
 
     for (int ii = 0; ii < sem->get_max_priority(); ii++) {
-        string *m = get_metrics_name(METRIC_LOCK_PREFIX, *sem->get_name(), ii);
-        if (!IS_EMPTY_P(m)) {
-            metrics_utils::create_metric(*m, AverageMetric, true);
-            CHECK_AND_FREE(m);
+        string m = get_metrics_name(METRIC_LOCK_PREFIX, *sem->get_name(), ii);
+        if (!IS_EMPTY(m)) {
+            metrics_utils::create_metric(m, AverageMetric, true);
         }
         m = get_metrics_name(METRIC_LOCK_TIMEOUT_PREFIX, *sem->get_name(), ii);
-        if (!IS_EMPTY_P(m)) {
-            metrics_utils::create_metric(*m, BasicMetric, true);
-            CHECK_AND_FREE(m);
+        if (!IS_EMPTY(m)) {
+            metrics_utils::create_metric(m, BasicMetric, true);
         }
     }
-    string *m = get_metrics_name(METRIC_QUOTA_PREFIX, *sem->get_name(), -1);
-    if (!IS_EMPTY_P(m)) {
-        metrics_utils::create_metric(*m, BasicMetric, true);
-        CHECK_AND_FREE(m);
+    string m = get_metrics_name(METRIC_QUOTA_PREFIX, *sem->get_name(), -1);
+    if (!IS_EMPTY(m)) {
+        metrics_utils::create_metric(m, BasicMetric, true);
     }
     m = get_metrics_name(METRIC_QUOTA_REACHED_PREFIX, *sem->get_name(), -1);
-    if (!IS_EMPTY_P(m)) {
-        metrics_utils::create_metric(*m, BasicMetric, true);
-        CHECK_AND_FREE(m);
+    if (!IS_EMPTY(m)) {
+        metrics_utils::create_metric(m, BasicMetric, true);
     }
     LOG_INFO("Created new semaphore handle. [name=%s]...", sem->get_name()->c_str());
 }
@@ -93,9 +89,8 @@ com::watergate::core::control_client::try_lock(string name, int priority, int ba
     if (IS_BASE_PRIORITY(priority)) {
         r = sem_c->try_lock_base(quota, base_priority, false);
         if (r == Locked) {
-            string *q_name = get_metrics_name(METRIC_QUOTA_PREFIX, name, -1);
-            com::watergate::common::metrics_utils::update(*q_name, quota);
-            CHECK_AND_FREE(q_name);
+            string q_name = get_metrics_name(METRIC_QUOTA_PREFIX, name, -1);
+            com::watergate::common::metrics_utils::update(q_name, quota);
         }
     } else
         r = sem_c->try_lock(priority, base_priority, false);
@@ -118,9 +113,8 @@ com::watergate::core::control_client::wait_lock(string name, int priority, int b
     if (IS_BASE_PRIORITY(priority)) {
         r = sem_c->try_lock_base(quota, base_priority, true);
         if (r == Locked) {
-            string *q_name = get_metrics_name(METRIC_QUOTA_PREFIX, name, -1);
-            com::watergate::common::metrics_utils::update(*q_name, quota);
-            CHECK_AND_FREE(q_name);
+            string q_name = get_metrics_name(METRIC_QUOTA_PREFIX, name, -1);
+            com::watergate::common::metrics_utils::update(q_name, quota);
         }
     } else
         r = sem_c->try_lock(priority, base_priority, true);
@@ -204,16 +198,14 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
     }
 
     if (ret == Timeout) {
-        string *m = get_metrics_name(METRIC_LOCK_TIMEOUT_PREFIX, name, -1);
-        if (NOT_NULL(m)) {
-            com::watergate::common::metrics_utils::update(*m, 1);
-            CHECK_AND_FREE(m);
+        string m = get_metrics_name(METRIC_LOCK_TIMEOUT_PREFIX, name, -1);
+        if (!IS_EMPTY(m)) {
+            com::watergate::common::metrics_utils::update(m, 1);
         }
     } else if (ret == QuotaReached) {
-        string *m = get_metrics_name(METRIC_QUOTA_REACHED_PREFIX, name, -1);
-        if (NOT_NULL(m)) {
-            com::watergate::common::metrics_utils::update(*m, 1);
-            CHECK_AND_FREE(m);
+        string m = get_metrics_name(METRIC_QUOTA_REACHED_PREFIX, name, -1);
+        if (!IS_EMPTY(m)) {
+            com::watergate::common::metrics_utils::update(m, 1);
         }
     }
     return ret;

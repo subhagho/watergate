@@ -128,10 +128,11 @@ TEST_CASE("Fail lock operations", "[com::watergate::core::control_def]") {
         if (r)
             LOG_INFO("Successfully released lock [name=%s][priority=%d][index=%d]", CONTROL_NAME, 0, ii);
         else
-            LOG_INFO("Lock already [name=%s][priority=%d][index=%d]", CONTROL_NAME, 0, ii);
+            LOG_INFO("Lock already released [name=%s][priority=%d][index=%d]", CONTROL_NAME, 0, ii);
     }
 
     control->dump();
+    control->test_assert();
     CHECK_AND_FREE(control);
     CHECK_AND_FREE(env);
 }
@@ -177,15 +178,19 @@ TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]"
         string p = string("--priority=");
         p.append(to_string(ii % 2));
 
+        string index = string("--index=");
+        index.append(to_string(ii));
+
         pid_t pid = fork();
         switch (pid) {
             case -1: /* Error */
                 LOG_ERROR("Uh-Oh! fork() failed. [index=%d]", ii);
                 exit(1);
             case 0:
-                LOG_INFO("Launching process [index=%d]. [%s %s %s]", ii, proc.c_str(), c_param.c_str(), p.c_str());
+                LOG_INFO("Launching process [index=%d]. [%s %s %s %s]", ii, proc.c_str(), c_param.c_str(), p.c_str(),
+                         index.c_str());
 
-                execl(proc.c_str(), proc.c_str(), c_param.c_str(), p.c_str(), (char *) nullptr);
+                execl(proc.c_str(), proc.c_str(), c_param.c_str(), p.c_str(), index.c_str(), (char *) nullptr);
                 LOG_ERROR("Uh-Oh! execl() failed! [index=%d]", ii);/* execl doesn't return unless there's an error */
                 exit(1);
             default:

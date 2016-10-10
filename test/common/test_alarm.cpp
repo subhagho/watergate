@@ -13,11 +13,9 @@ TEST_CASE("Test time function.", "[com::watergate::common::timer]") {
     REQUIRE(NOT_NULL(config));
 
     timer t;
-    bool r = false;
 
     t.start();
-    START_ALARM("4s", r);
-    REQUIRE(r);
+    START_ALARM("4s");
 
     t.stop();
 
@@ -34,20 +32,18 @@ TEST_CASE("Test alarm with callback.", "[com::watergate::common::alarm]") {
     REQUIRE(NOT_NULL(config));
 
     timer t;
-    bool r = false;
 
     string *id = new string(common_utils::uuid());
     test_type *tt = new test_type(id);
     test_callback *tc = new test_callback(tt);
 
     t.start();
-    START_ALARM("5s", r);
-    REQUIRE(r);
+    START_ALARM("5s");
 
     t.pause();
-    START_ALARM(1000 * 5, r);
+    START_ALARM(1000 * 5);
     t.restart();
-    START_ALARM_WITH_CALLBACK("5s", tc, r);
+    START_ALARM_WITH_CALLBACK("5s", tc);
     t.stop();
 
     CHECK_AND_FREE(tt);

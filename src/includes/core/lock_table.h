@@ -39,7 +39,7 @@ namespace com {
         namespace core {
             class lock_table_error : public base_error {
             public:
-                lock_table_error(char const *file, const int line, string *mesg) : base_error(file, line,
+                lock_table_error(char const *file, const int line, string mesg) : base_error(file, line,
                                                                                               CONST_LOCKT_ERROR_PREFIX,
                                                                                               mesg) {
                 }
