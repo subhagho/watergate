@@ -156,7 +156,7 @@ namespace com {
                     thread_ptr->priority_lock_index[priority]->id = -1;
                 }
 
-                void update_metrics(int priority, long lock_time) {
+                void update_metrics(int priority, uint64_t lock_time) {
                     _assert(NOT_NULL(thread_ptr));
 
                     if (thread_ptr->metrics.base_priority < 0) {

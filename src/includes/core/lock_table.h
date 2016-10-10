@@ -144,7 +144,7 @@ namespace com {
 
                 bool is_lock_active(int priority) {
                     if (lock_record->lock.locks[priority].has_lock) {
-                        long now = time_utils::now();
+                        uint64_t now = time_utils::now();
                         if (now < (lock_record->lock.locks[priority].acquired_time + get_lock_lease_time())) {
                             return true;
                         }

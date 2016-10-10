@@ -17,6 +17,8 @@ TEST_CASE("Test time function.", "[com::watergate::common::timer]") {
 
     t.start();
     START_ALARM("4s", r);
+    REQUIRE(r);
+
     t.stop();
 
     LOG_INFO("Recorded elapsed time = %d", t.get_elapsed());
@@ -40,6 +42,8 @@ TEST_CASE("Test alarm with callback.", "[com::watergate::common::alarm]") {
 
     t.start();
     START_ALARM("5s", r);
+    REQUIRE(r);
+
     t.pause();
     START_ALARM(1000 * 5, r);
     t.restart();
