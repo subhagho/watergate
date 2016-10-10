@@ -214,7 +214,7 @@ namespace com {
                             if (c == '/') {
                                 n_path += "/";
                             }
-                            for (int ii = 0; ii < parts.size(); ii++) {
+                            for (uint32_t ii = 0; ii < parts.size(); ii++) {
                                 if (parts[ii].empty())
                                     continue;
                                 if (ii > 0)

@@ -87,7 +87,7 @@ namespace com {
                     return lock(name, priority, quota, DEFAULT_MAX_TIMEOUT, err);
                 }
 
-                lock_acquire_enum lock(string name, int priority, double quota, long timeout, int *err) {
+                lock_acquire_enum lock(string name, int priority, double quota, uint64_t timeout, int *err) {
                     CHECK_STATE_AVAILABLE(state);
 
                     string *m_name = get_metrics_name(METRIC_LOCK_PREFIX, name, priority);

@@ -52,7 +52,7 @@ namespace com {
                     this->thread_safe = thread_safe;
                 }
 
-                ~_metric() {
+                virtual ~_metric() {
                     if (NOT_NULL(name)) {
                         delete (name);
 
@@ -71,9 +71,9 @@ namespace com {
                 string get_type_string() {
                     switch (type) {
                         case BasicMetric:
-                            return "BASIC";
+                            return "BasicMetric";
                         case AverageMetric:
-                            return "AVERAGE";
+                            return "AverageMetric";
                     }
                 }
 

@@ -462,7 +462,7 @@ namespace com {
                         if (offset == path.size() - 1) {
                             string *index = parse_key_index(path[offset]);
                             if (NOT_EMPTY_P(index)) {
-                                int ii = stoi(*index);
+                                uint32_t ii = stoi(*index);
                                 if (ii > 0 && ii < values.size()) {
                                     return values[ii];
                                 }
@@ -472,7 +472,7 @@ namespace com {
                         } else {
                             string *index = parse_key_index(path[offset]);
                             if (NOT_EMPTY_P(index)) {
-                                int ii = stoi(*index);
+                                uint32_t ii = stoi(*index);
                                 if (ii > 0 && ii < values.size()) {
                                     ConfigValue *cv = values[ii];
                                     return cv->find(path, offset);
