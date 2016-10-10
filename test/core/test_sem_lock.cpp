@@ -176,7 +176,7 @@ TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]"
     for (int ii = 0; ii < p_count; ii++) {
         pids[ii] = -1;
         string p = string("--priority=");
-        p.append(to_string(ii % 2));
+        p.append(to_string(ii % 3));
 
         string index = string("--index=");
         index.append(to_string(ii));

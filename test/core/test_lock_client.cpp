@@ -47,9 +47,9 @@ void com::watergate::tests::common::basic_lock_client::setup() {
 
 void com::watergate::tests::common::basic_lock_client::run() {
     pid_t pid = getpid();
-    thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);
+    thread_lock_ptr *tptr = control->register_thread(FS_CONTROL_NAME);
     if (IS_NULL(tptr)) {
-        throw BASE_ERROR("Error registering thread. [name=%s]", CONTROL_NAME);
+        throw BASE_ERROR("Error registering thread. [name=%s]", FS_CONTROL_NAME);
     }
     string tid = tptr->thread_id;
     int count = 0;
@@ -62,30 +62,30 @@ void com::watergate::tests::common::basic_lock_client::run() {
         while (true) {
             int err = 0;
             t.restart();
-            lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, 5000, &err);
+            lock_acquire_enum r = control->lock(FS_CONTROL_NAME, priority, 200, 5000, &err);
             t.pause();
             if (r == Locked && err == 0) {
                 LOG_INFO("Successfully acquired lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d]", pid,
                          tid.c_str(),
-                         CONTROL_NAME, priority,
+                         FS_CONTROL_NAME, priority,
                          ii);
                 count++;
                 usleep((2 - priority) * 500 * 1000);
-                bool r = control->release(CONTROL_NAME, priority);
+                bool r = control->release(FS_CONTROL_NAME, priority);
                 if (r) {
                     LOG_INFO("Successfully released lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d]", pid,
                              tid.c_str(),
-                             CONTROL_NAME, priority,
+                             FS_CONTROL_NAME, priority,
                              ii);
                 }
                 break;
             } else if (err != 0) {
                 LOG_ERROR("Filed to acquired lock [thread=%s][name=%s][priority=%d][try=%d][response=%d][error=%d]",
                           tid.c_str(),
-                          CONTROL_NAME, priority, ii, r, err);
+                          FS_CONTROL_NAME, priority, ii, r, err);
             } else
                 LOG_ERROR("Filed to acquired lock [thread=%s][name=%s][priority=%d][try=%d][response=%d]", tid.c_str(),
-                          CONTROL_NAME, priority, ii, r);
+                          FS_CONTROL_NAME, priority, ii, r);
         }
         START_ALARM(sleep_timeout * (priority + 1));
     }

@@ -131,7 +131,7 @@ namespace com {
                     string tp = TEMP_DIR;
 
                     string p = common_utils::format("%s%s%s%s%s", tp.data(), CONST_PATH_DELIM, CONST_DEFAULT_DIRECTORY,
-                                                     CONST_PATH_DELIM, name.data());
+                                                    CONST_PATH_DELIM, name.data());
 
                     p = cannonical_path(p);
 
@@ -160,7 +160,7 @@ namespace com {
                     string file;
                     if (!ext.empty()) {
                         file = common_utils::format("%s%s%s.%s", path.data(), CONST_PATH_DELIM, name.data(),
-                                                     ext.data());
+                                                    ext.data());
                     } else {
                         file = common_utils::format("%s%s%s", path.data(), CONST_PATH_DELIM, name.data());
                     }
@@ -259,41 +259,53 @@ namespace com {
 
             class Path {
             private:
-                string path;
+                string *path;
 
             public:
-                Path() {}
+                Path() {
+                    path = new string();
+                }
+
+                ~Path() {
+                    CHECK_AND_FREE(path);
+                }
 
                 Path(const string p) {
+                    path = new string();
                     append(p);
                 }
 
                 const string get_path() const {
+                    return *path;
+                }
+
+                const string *get_path_p() const {
                     return path;
                 }
 
                 const string append(string p) {
                     assert(!p.empty());
 
-                    if (path.empty()) {
-                        path = p;
+                    if (path->empty()) {
+                        path = new string(p);
                     } else {
-                        path = file_utils::concat_path(path, p);
+                        string np = file_utils::concat_path(*path, p);
+                        path->clear();
+                        path->append(np);
                     }
-                    path = file_utils::cannonical_path(path);
 
-                    return path;
+                    return *path;
                 }
 
                 bool exists() const {
-                    if (!path.empty()) {
-                        return file_utils::file_exists(path.data());
+                    if (!path->empty()) {
+                        return file_utils::file_exists(path->c_str());
                     }
                     return false;
                 }
 
                 const string get_parent_dir() const {
-                    vector<string> parts = common_utils::split(path, '/');
+                    vector<string> parts = common_utils::split(*path, '/');
                     if (parts.size() > 1) {
                         string ss = string(parts[0]);
                         for (uint32_t ii = 1; ii < parts.size() - 2; ii++) {
@@ -305,36 +317,36 @@ namespace com {
                 }
 
                 bool is_file() const {
-                    if (!path.empty()) {
-                        return file_utils::is_file(path.data());
+                    if (!path->empty()) {
+                        return file_utils::is_file(path->c_str());
                     }
                     return false;
                 }
 
                 bool is_directory() const {
-                    if (!path.empty()) {
-                        return file_utils::is_dir(path.data());
+                    if (!path->empty()) {
+                        return file_utils::is_dir(path->c_str());
                     }
                     return false;
                 }
 
                 const string create(mode_t mode) {
-                    if (!path.empty()) {
-                        return file_utils::create_directory(path, mode);
+                    if (!path->empty()) {
+                        return file_utils::create_directory(*path, mode);
                     }
-                    return path;
+                    return *path;
                 }
 
                 bool remove() {
-                    if (!path.empty()) {
-                        return file_utils::remove_file(path, true);
+                    if (!path->empty()) {
+                        return file_utils::remove_file(*path, true);
                     }
                     return false;
                 }
 
                 bool clear() {
-                    if (!path.empty()) {
-                        return file_utils::clean_directory(path);
+                    if (!path->empty()) {
+                        return file_utils::clean_directory(*path);
                     }
                     return false;
                 }

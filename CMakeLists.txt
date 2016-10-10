@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.1)
 
 project(watergate VERSION 0.1.0)
 
-
 set(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

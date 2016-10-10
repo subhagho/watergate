@@ -42,7 +42,7 @@ namespace com {
 
                 virtual int get_control_size() = 0;
 
-                virtual string *get_resource_name() = 0;
+                virtual const string *get_resource_name() = 0;
 
                 long get_lease_time() {
                     return lease_time;

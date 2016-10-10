@@ -22,6 +22,7 @@
 #define TCL_CONFIG_VALUE_TRIES "lock.tries"
 
 #define CONTROL_NAME "dummy-resource-1"
+#define FS_CONTROL_NAME "/tmp"
 
 using namespace com::watergate::common;
 using namespace com::watergate::core;

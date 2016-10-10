@@ -28,7 +28,7 @@ void com::watergate::core::_semaphore::create(const _app *app, const ConfigValue
 
     this->resource = resource_factory::get_resource(r_class, r_node);
 
-    this->name = this->resource->get_resource_name();
+    this->name = new string(*this->resource->get_resource_name());
 
     this->is_server = server;
 
@@ -105,7 +105,7 @@ void com::watergate::core::_semaphore::delete_sem(int index) {
 }
 
 com::watergate::core::_semaphore::~_semaphore() {
-
+    CHECK_AND_FREE(this->name);
     CHECK_AND_FREE(resource);
     CHECK_AND_FREE(table);
 }

@@ -33,6 +33,6 @@ int com::watergate::core::dummy_resource::get_control_size() {
     return this->size;
 }
 
-string *com::watergate::core::dummy_resource::get_resource_name() {
+const string *com::watergate::core::dummy_resource::get_resource_name() {
     return this->name;
 }

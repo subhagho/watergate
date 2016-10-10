@@ -33,7 +33,7 @@ namespace com {
 
                 int get_control_size() override;
 
-                string *get_resource_name() override;
+                const string *get_resource_name() override;
 
             };
         }
