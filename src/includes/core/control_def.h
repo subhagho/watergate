@@ -79,6 +79,10 @@ namespace com {
 
 
             public:
+                ~control_client() override {
+
+                }
+
                 void init(const _app *app, const ConfigValue *config) override {
                     create(app, config, false);
                 }

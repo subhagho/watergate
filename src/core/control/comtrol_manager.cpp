@@ -52,8 +52,8 @@ void com::watergate::core::control_manager::init(const _app *app, const ConfigVa
     }
 
     lock_timeout = common_utils::parse_duration(ss);
-    CHECK(lock_timeout > 0);
-
+    PRECONDITION(lock_timeout > 0);
+    LOG_INFO("Using lock timeout value %lu msec.", lock_timeout);
     ss = DEFAULT_RECORD_RESET_TIME;
     {
         const BasicConfigValue *cn = Config::get_value(CONST_CM_CONFIG_RECORD_RESET_TIME, config);
@@ -66,7 +66,8 @@ void com::watergate::core::control_manager::init(const _app *app, const ConfigVa
     }
 
     record_timeout = common_utils::parse_duration(ss);
-    CHECK(record_timeout > 0);
+    PRECONDITION(record_timeout > 0);
+    LOG_INFO("Using record reset timeout value %lu msec.", record_timeout);
 
     start();
 }

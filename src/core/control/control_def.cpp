@@ -68,7 +68,7 @@ com::watergate::core::control_def::~control_def() {
     if (!IS_EMPTY(semaphores)) {
         for (auto kv : semaphores) {
             if (NOT_NULL(kv.second)) {
-                free(kv.second);
+                delete (kv.second);
             }
         }
         semaphores.clear();

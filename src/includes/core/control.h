@@ -76,9 +76,7 @@ namespace com {
                 void delete_sem(int index);
 
                 sem_t *get(int index) const {
-                    if (index < 0 || index > priorities)
-                        LOG_ERROR("Invalid index range specified. [index=%d]", index);
-                    _assert(index >= 0 && index < priorities);
+                    PRECONDITION(index >= 0 && index < priorities);
 
                     return semaphores[index];
                 }

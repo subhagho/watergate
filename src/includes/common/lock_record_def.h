@@ -241,10 +241,9 @@ namespace com {
                 }
 
                 static void reset_record(_lock_record *record) {
-                    _assert(NOT_NULL(record));
+                    PRECONDITION(NOT_NULL(record));
 
                     record->used = false;
-                    record->index = -1;
 
                     // Reset App handle
                     record->app.proc_id = 0;

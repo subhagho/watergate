@@ -212,7 +212,6 @@ TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]"
         LOG_INFO("Process [pid=%d] exited with status [%d]", pids[ii], status);
     }
 
-    manager->dump();
     CHECK_AND_FREE(manager);
     CHECK_AND_FREE(env);
 }

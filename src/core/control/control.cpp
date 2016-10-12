@@ -71,7 +71,7 @@ void com::watergate::core::_semaphore::create(const _app *app, const ConfigValue
 }
 
 void com::watergate::core::_semaphore::create_sem(int index) {
-    CHECK(index >= 0 && index < priorities);
+    PRECONDITION(index >= 0 && index < priorities);
 
     string sem_name = common_utils::format("%s::%s::%d", CONTROL_LOCK_PREFIX, name->c_str(), index);
 
@@ -84,7 +84,7 @@ void com::watergate::core::_semaphore::create_sem(int index) {
 }
 
 void com::watergate::core::_semaphore::delete_sem(int index) {
-    CHECK(index >= 0 && index < priorities);
+    PRECONDITION(index >= 0 && index < priorities);
 
     if (IS_VALID_SEM_PTR(semaphores[index])) {
         if (!owner) {
@@ -108,8 +108,8 @@ com::watergate::core::_semaphore::~_semaphore() {
 }
 
 lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority, int base_priority, bool wait) {
-    CHECK(priority >= 0 && priority < priorities);
-    CHECK(base_priority >= 0 && base_priority < priorities);
+    PRECONDITION(priority >= 0 && priority < priorities);
+    PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
             ASSERT(NOT_NULL(semaphores));
 
@@ -180,7 +180,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
 }
 
 lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double quota, int base_priority, bool wait) {
-    CHECK(base_priority >= 0 && base_priority < priorities);
+    PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
             ASSERT(NOT_NULL(semaphores));
 
@@ -256,7 +256,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double 
 }
 
 bool com::watergate::core::_semaphore_client::release_lock_base(int base_priority) {
-    CHECK(base_priority >= 0 && base_priority < priorities);
+    PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
             ASSERT(NOT_NULL(semaphores));
 
@@ -329,8 +329,8 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
 }
 
 bool com::watergate::core::_semaphore_client::release_lock(int priority, int base_priority) {
-    CHECK(priority >= 0 && priority < priorities);
-    CHECK(base_priority >= 0 && base_priority < priorities);
+    PRECONDITION(priority >= 0 && priority < priorities);
+    PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
             ASSERT(NOT_NULL(semaphores));
 
@@ -406,7 +406,7 @@ void com::watergate::core::_semaphore_owner::reset() {
 }
 
 void com::watergate::core::_semaphore_owner::check_expired_locks(uint64_t expiry_time) {
-    CHECK(expiry_time > 0);
+    PRECONDITION(expiry_time > 0);
 
     uint32_t counts[MAX_PRIORITY_ALLOWED];
     memset(counts, 0, (MAX_PRIORITY_ALLOWED * sizeof(uint32_t)));
@@ -432,7 +432,7 @@ void com::watergate::core::_semaphore_owner::check_expired_locks(uint64_t expiry
 }
 
 void com::watergate::core::_semaphore_owner::check_expired_records(uint64_t expiry_time) {
-    CHECK(expiry_time > 0);
+    PRECONDITION(expiry_time > 0);
 
     lock_table_manager *tm = get_table_manager();
     CHECK_NOT_NULL(tm);

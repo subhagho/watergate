@@ -218,7 +218,6 @@ int main(int argc, char *argv[]) {
 
         control->dump();
 
-        manager->dump();
         manager->clear_locks();
 
         for (int ii = 0; ii < t_count; ii++) {

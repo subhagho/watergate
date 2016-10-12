@@ -67,12 +67,22 @@ void com::watergate::core::lock_table::create(string name, resource_def *resourc
 
 void com::watergate::core::lock_table::remove_record(int index) {
 
-    assert(index >= 0 && index < DEFAULT_MAX_RECORDS);
+    PRECONDITION(index >= 0 && index < DEFAULT_MAX_RECORDS);
+
     _lock_table *ptr = (_lock_table *) mem_ptr;
+    _lock_record *rec = &ptr->records[index];
 
     if (!lock->wait_lock()) {
         lock_table_error te = LOCK_TABLE_ERROR("Error getting lock to update table. [name=%s][error=%s]", name.c_str(),
                                                strerror(errno));
+        LOG_CRITICAL(te.what());
+        state.set_error(&te);
+
+        throw te;
+    }
+    if (!rec->used) {
+        lock_table_error te = LOCK_TABLE_ERROR("Table index corrupted. Returned record is being used. [index=%d]",
+                                               index);
         LOG_CRITICAL(te.what());
         state.set_error(&te);
 
@@ -84,17 +94,8 @@ void com::watergate::core::lock_table::remove_record(int index) {
             break;
         }
     }
-    _lock_record *rec = &ptr->records[index];
-    if (!rec->used) {
-        lock_table_error te = LOCK_TABLE_ERROR("Table index corrupted. Returned record is being used. [index=%d]",
-                                               index);
-        LOG_CRITICAL(te.what());
-        state.set_error(&te);
 
-        throw te;
-    }
     RESET_RECORD(rec);
-
 
     if (!lock->release_lock()) {
         lock_table_error te = LOCK_TABLE_ERROR("Error releasing lock for update table. [name=%s][error=%s]",

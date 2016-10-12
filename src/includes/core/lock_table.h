@@ -64,7 +64,7 @@ namespace com {
                 const _lock_record *get_record(int index) {
                     CHECK_STATE_AVAILABLE(state);
 
-                    CHECK(index >= 0 && index < DEFAULT_MAX_RECORDS);
+                    PRECONDITION(index >= 0 && index < DEFAULT_MAX_RECORDS);
                     _lock_table *ptr = (_lock_table *) mem_ptr;
 
                     return &ptr->records[index];
@@ -98,7 +98,7 @@ namespace com {
 
 
                 void remove_record(_lock_record *rec) {
-                    assert(NOT_NULL(rec));
+                    PRECONDITION(NOT_NULL(rec));
                     remove_record(rec->index);
                 }
 
@@ -172,10 +172,12 @@ namespace com {
                         _lock_record *rec = &ptr->records[ii];
                         if (rec->used) {
                             for (int jj = 0; jj < MAX_PRIORITY_ALLOWED; jj++) {
-                                uint64_t at = rec->lock.locks[jj].acquired_time;
-                                uint64_t now = time_utils::now();
-                                if ((at + expiry_time) <= now) {
-                                    counts[jj]++;
+                                if (rec->lock.locks[jj].has_lock) {
+                                    uint64_t at = rec->lock.locks[jj].acquired_time + ptr->lock_lease_time;
+                                    uint64_t now = time_utils::now();
+                                    if ((at + expiry_time) <= now) {
+                                        counts[jj]++;
+                                    }
                                 }
                             }
                         }
@@ -192,8 +194,10 @@ namespace com {
                             uint64_t ut = rec->app.last_active_ts;
                             uint64_t now = time_utils::now();
                             if ((ut + expiry_time) <= now) {
-                                LOG_WARN("Resetting expired application record. [app name=%s][pid=%d]",
-                                         rec->app.app_name, rec->app.proc_id);
+                                LOG_WARN(
+                                        "Resetting expired application record. [app name=%s][pid=%d][name=%s][last active=%s]",
+                                        rec->app.app_name, rec->app.proc_id, name.c_str(),
+                                        time_utils::get_time_string(ut).c_str());
                                 remove_record(ii);
                             }
                         }
@@ -218,11 +222,20 @@ namespace com {
 
             public:
                 ~lock_table_client() override {
+                    if (state.is_disposed())
+                        return;
+
                     state.set_state(Disposed);
 
                     if (NOT_NULL(lock_record)) {
-                        remove_record(lock_record->index);
-                        lock_record = nullptr;
+                        pid_t pid = getpid();
+                        if (lock_record->used && lock_record->app.proc_id == pid) {
+                            LOG_WARN("Removing current lock record. [app name=%s][pid=%d][name=%s]",
+                                     lock_record->app.app_id,
+                                     lock_record->app.proc_id, name.c_str());
+                            remove_record(lock_record->index);
+                            lock_record = nullptr;
+                        }
                     }
 
                     CHECK_AND_FREE(shared_lock);
@@ -292,6 +305,8 @@ namespace com {
                                 "Lock record has been reset. [current owner=%d][proc id=%d]", lock_record->app.proc_id,
                                 pid);
                     }
+
+                    lock_record->app.last_active_ts = time_utils::now();
                     if (lock_record->lock.locks[priority].has_lock) {
                         if (!is_lock_active(priority)) {
                             lock_record->lock.locks[priority].has_lock = false;
@@ -318,7 +333,6 @@ namespace com {
                 lock_acquire_enum check_and_lock(double quota) {
                     CHECK_STATE_AVAILABLE(state);
 
-                    lock_record->app.last_active_ts = time_utils::now();
                     lock_acquire_enum ls = has_valid_lock(BASE_PRIORITY);
                     if (ls == Expired) {
                         release_lock(ls, BASE_PRIORITY);

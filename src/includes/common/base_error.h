@@ -46,7 +46,7 @@
     } \
 } while(0);
 
-#define CHECK(p) do { \
+#define PRECONDITION(p) do { \
     if (!(p)) { \
         throw BASE_ERROR("Check condition failed. [%s][%s]", #p, __PRETTY_FUNCTION__); \
     } \
@@ -57,7 +57,7 @@ namespace com {
         namespace common {
             class base_error : public exception {
             private:
-                string *mesg;
+                string mesg;
                 string file;
                 int lineno;
                 string r_mesg;
@@ -70,8 +70,8 @@ namespace com {
                     if (lineno >= 0) {
                         ss << lineno << "\t";
                     }
-                    if (NOT_EMPTY_P(mesg)) {
-                        ss << *mesg;
+                    if (!IS_EMPTY(mesg)) {
+                        ss << mesg;
                     }
 
                     r_mesg = string(ss.str());
@@ -81,7 +81,7 @@ namespace com {
                 base_error(char const *file, const int line, const string prefix, string mesg) {
                     this->file = string(file);
                     this->lineno = line;
-                    this->mesg = new string(common_utils::format("%s %s", prefix.c_str(), mesg.c_str()));
+                    this->mesg = string(common_utils::format("%s %s", prefix.c_str(), mesg.c_str()));
 
                     set_r_mesg();
                 }
@@ -90,19 +90,13 @@ namespace com {
                 base_error(char const *file, const int line, string mesg) {
                     this->file = file;
                     this->lineno = line;
-                    this->mesg = new string(mesg);
+                    this->mesg = string(mesg);
 
                     set_r_mesg();
                 }
 
-                ~base_error() {
-                    if (NOT_NULL(mesg)) {
-                        delete (mesg);
-                    }
-                }
-
                 const string get_error() {
-                    return *mesg;
+                    return mesg;
                 }
 
                 const char *what() const throw() override {

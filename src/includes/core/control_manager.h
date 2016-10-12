@@ -15,7 +15,7 @@
 #define CONST_CM_CONFIG_LOCK_RESET_TIME "lock.reset.time"
 #define CONST_CM_CONFIG_RECORD_RESET_TIME "record.reset.time"
 
-#define DEFAULT_CONTROL_THREAD_SLEEP 10 * 1000 * 1000 // 10 seconds
+#define DEFAULT_CONTROL_THREAD_SLEEP 10 * 1000 // 10 seconds
 
 namespace com {
     namespace watergate {
@@ -32,6 +32,8 @@ namespace com {
                 }
 
                 void join() {
+                    PRECONDITION(!state.is_available());
+
                     if (NOT_NULL(control_thread)) {
                         control_thread->join();
                     }
