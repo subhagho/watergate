@@ -9,7 +9,8 @@ using namespace com::watergate::core;
 
 void com::watergate::core::control_def::create(const _app *app, const ConfigValue *config, bool server) {
     try {
-        assert(NOT_NULL(config));
+        CHECK_NOT_NULL(app);
+        CHECK_NOT_NULL(config);
 
         if (config->get_type() == Node) {
             add_resource_lock(app, config, server);

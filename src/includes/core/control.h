@@ -7,14 +7,15 @@
 
 #include <semaphore.h>
 #include <vector>
-#include <includes/common/lock_record_def.h>
 
+#include "includes/common/lock_record_def.h"
 #include "includes/common/common.h"
 #include "includes/common/base_error.h"
 #include "includes/common/common_utils.h"
 #include "includes/common/_app.h"
 #include "resource_def.h"
 #include "lock_table.h"
+#include "includes/common/_state.h"
 
 #define DEFAULT_SEM_MODE 0760
 
@@ -22,8 +23,8 @@
 #define CONST_SEM_CONFIG_PARAM_RESOURCE_NAME "name"
 #define CONST_SEM_CONFIG_PARAM_RESOURCE_CLASS "class"
 #define CONST_SEM_CONFIG_NODE_PRIORITIES "priorities"
-#define CONST_SEM_CONFIG_NODE_THREAD_LOCKS "allow_thread_locks"
 #define CONST_SEM_CONFIG_NODE_MODE "mode"
+
 
 #define CONST_CONTROL_ERROR_PREFIX "Control Object Error : "
 
@@ -43,8 +44,8 @@ namespace com {
             class control_error : public base_error {
             public:
                 control_error(char const *file, const int line, string mesg) : base_error(file, line,
-                                                                                           CONST_CONTROL_ERROR_PREFIX,
-                                                                                           mesg) {
+                                                                                          CONST_CONTROL_ERROR_PREFIX,
+                                                                                          mesg) {
                 }
             };
 
@@ -82,21 +83,6 @@ namespace com {
                     return semaphores[index];
                 }
 
-                lock_table_manager *get_table_manager() {
-                    if (is_server) {
-                        lock_table_manager *ptr = static_cast<lock_table_manager *>(table);
-                        return ptr;
-                    }
-                    throw BASE_ERROR("Invalid call to get table manager. Instance not running in server mode.");
-                }
-
-                lock_table_client *get_table_client() {
-                    if (!is_server) {
-                        lock_table_client *ptr = static_cast<lock_table_client *>(table);
-                        return ptr;
-                    }
-                    throw BASE_ERROR("Invalid call to get table client. Instance not running in client mode.");
-                }
 
                 bool is_priority_valid(int p) {
                     return (p >= 0 && p < this->priorities);
@@ -120,6 +106,7 @@ namespace com {
 
             class _semaphore_owner : public _semaphore {
             private:
+                _state state;
                 lock_table_manager *manager;
 
             public:
@@ -136,12 +123,21 @@ namespace com {
                     }
                 }
 
+                inline lock_table_manager *get_table_manager() {
+                    CHECK_NOT_NULL(table);
+                    lock_table_manager *ptr = static_cast<lock_table_manager *>(table);
+                    return ptr;
+                }
+
+
                 void init(const _app *app, const ConfigValue *config) override {
                     create(app, config, true);
 
-                    reset();
-
+                    table = new lock_table_manager();
                     manager = get_table_manager();
+                    manager->init(*name, resource);
+
+                    reset();
                 }
 
                 void clear_locks() {
@@ -168,6 +164,11 @@ namespace com {
                 }
 
                 void reset();
+
+                void check_expired_locks(uint64_t expiry_time);
+
+                void check_expired_records(uint64_t expiry_time);
+
             };
 
             class _semaphore_client : public _semaphore {
@@ -249,17 +250,27 @@ namespace com {
                 void init(const _app *app, const ConfigValue *config) override {
                     create(app, config, false);
 
+                    table = new lock_table_client();
+                    client = get_table_client();
+                    client->init(app, *name, resource);
+
                     for (int ii = 0; ii < priorities; ii++) {
                         _struct_priority_record *lc = new _struct_priority_record();
                         counts.push_back(lc);
                         counts[ii]->priority = ii;
                         counts[ii]->count = 0;
                     }
-                    client = get_table_client();
                 }
 
 
-                inline thread_lock_record *register_thread() {
+                inline lock_table_client *get_table_client() {
+                    CHECK_NOT_NULL(table);
+
+                    lock_table_client *ptr = static_cast<lock_table_client *>(table);
+                    return ptr;
+                }
+
+                thread_lock_record *register_thread() {
                     thread_lock_record *r = nullptr;
 
                     string id = thread_lock_record::get_current_thread();

@@ -15,14 +15,42 @@
 #define NOT_FOUND_ERROR(fmt, ...) not_found_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 #define NOT_FOUND_ERROR_PTR(fmt, ...) new not_found_error(__FILE__, __LINE__, common_utils::format(fmt, ##__VA_ARGS__))
 
+#ifdef NDEBUG
+#define    _assert(e)    ((void)0)
+#else
 #define _assert(e) do {\
     if (!(e)) { \
         LOG_ERROR("Assertion failed. [%s][%s]", #e, __PRETTY_FUNCTION__); \
         throw BASE_ERROR("Assertion failed. [%s][%s]", #e, __PRETTY_FUNCTION__); \
     } \
 } while(0);
+#endif
 
 #define ASSERT _assert
+
+#define CHECK_NOT_NULL(p) do { \
+    if (IS_NULL(p)) { \
+        throw BASE_ERROR("Specified pointer is null. [%s][%s]", #p, __PRETTY_FUNCTION__); \
+    } \
+} while(0);
+
+#define CHECK_NOT_EMPTY(p) do { \
+    if (IS_EMPTY(p)) { \
+        throw BASE_ERROR("Specified instance is empty. [%s][%s]", #p, __PRETTY_FUNCTION__); \
+    } \
+} while(0);
+
+#define CHECK_NOT_EMPTY_P(p) do { \
+    if (IS_NULL(p) || IS_EMPTY(p)) { \
+        throw BASE_ERROR("Specified instance is null or empty. [%s][%s]", #p, __PRETTY_FUNCTION__); \
+    } \
+} while(0);
+
+#define CHECK(p) do { \
+    if (!(p)) { \
+        throw BASE_ERROR("Check condition failed. [%s][%s]", #p, __PRETTY_FUNCTION__); \
+    } \
+} while(0);
 
 namespace com {
     namespace watergate {
@@ -86,8 +114,8 @@ namespace com {
             class not_found_error : public base_error {
             public:
                 not_found_error(char const *file, const int line, string mesg) : base_error(file, line,
-                                                                                             CONST_NOTF_ERROR_PREFIX,
-                                                                                             mesg) {
+                                                                                            CONST_NOTF_ERROR_PREFIX,
+                                                                                            mesg) {
                 }
             };
         }

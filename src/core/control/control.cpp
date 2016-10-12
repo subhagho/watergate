@@ -4,12 +4,15 @@
 
 #include <includes/common/lock_record_def.h>
 #include <includes/core/control.h>
+#include <includes/common/alarm.h>
 #include "includes/core/resource_factory.h"
 
 
 using namespace com::watergate::core;
 
 void com::watergate::core::_semaphore::create(const _app *app, const ConfigValue *config, bool server) {
+    CHECK_NOT_NULL(app);
+    CHECK_NOT_NULL(config);
 
     const ConfigValue *r_node = config->find(CONST_SEM_CONFIG_NODE_RESOURCE);
     if (IS_NULL(r_node)) {
@@ -65,19 +68,11 @@ void com::watergate::core::_semaphore::create(const _app *app, const ConfigValue
         else
             throw CONTROL_ERROR("Invalid semaphore handle. [name=%s][index=%d]", name->c_str(), ii);
     }
-
-    if (this->is_server) {
-        table = new lock_table_manager();
-        lock_table_manager *mgr = get_table_manager();
-        mgr->init(*name, resource);
-    } else {
-        table = new lock_table_client();
-        lock_table_client *client = get_table_client();
-        client->init(app, *name, resource);
-    }
 }
 
 void com::watergate::core::_semaphore::create_sem(int index) {
+    CHECK(index >= 0 && index < priorities);
+
     string sem_name = common_utils::format("%s::%s::%d", CONTROL_LOCK_PREFIX, name->c_str(), index);
 
     sem_t *ptr = sem_open(sem_name.c_str(), O_CREAT, mode, max_concurrent);
@@ -89,6 +84,8 @@ void com::watergate::core::_semaphore::create_sem(int index) {
 }
 
 void com::watergate::core::_semaphore::delete_sem(int index) {
+    CHECK(index >= 0 && index < priorities);
+
     if (IS_VALID_SEM_PTR(semaphores[index])) {
         if (!owner) {
             if (sem_close(semaphores[index]) != 0) {
@@ -111,7 +108,11 @@ com::watergate::core::_semaphore::~_semaphore() {
 }
 
 lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority, int base_priority, bool wait) {
-    assert(NOT_NULL(semaphores));
+    CHECK(priority >= 0 && priority < priorities);
+    CHECK(base_priority >= 0 && base_priority < priorities);
+
+            ASSERT(NOT_NULL(semaphores));
+
     std::lock_guard<std::mutex> guard(counts[priority]->priority_lock);
 
     thread_lock_ptr *t_ptr = nullptr;
@@ -179,7 +180,9 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
 }
 
 lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double quota, int base_priority, bool wait) {
-    assert(NOT_NULL(semaphores));
+    CHECK(base_priority >= 0 && base_priority < priorities);
+
+            ASSERT(NOT_NULL(semaphores));
 
     std::lock_guard<std::mutex> guard(counts[BASE_PRIORITY]->priority_lock);
     thread_lock_ptr *t_ptr = nullptr;
@@ -253,7 +256,9 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double 
 }
 
 bool com::watergate::core::_semaphore_client::release_lock_base(int base_priority) {
-    assert(NOT_NULL(semaphores));
+    CHECK(base_priority >= 0 && base_priority < priorities);
+
+            ASSERT(NOT_NULL(semaphores));
 
     std::lock_guard<std::mutex> guard(counts[BASE_PRIORITY]->priority_lock);
     thread_lock_ptr *t_ptr = nullptr;
@@ -324,7 +329,10 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
 }
 
 bool com::watergate::core::_semaphore_client::release_lock(int priority, int base_priority) {
-    assert(NOT_NULL(semaphores));
+    CHECK(priority >= 0 && priority < priorities);
+    CHECK(base_priority >= 0 && base_priority < priorities);
+
+            ASSERT(NOT_NULL(semaphores));
 
     std::lock_guard<std::mutex> guard(counts[priority]->priority_lock);
     thread_lock_ptr *t_ptr = nullptr;
@@ -393,6 +401,40 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
 }
 
 void com::watergate::core::_semaphore_owner::reset() {
-    LOG_DEBUG("Resetting all semaphores...");
+    LOG_DEBUG("[name=%s] Resetting all semaphores...", name->c_str());
     clear_locks();
+}
+
+void com::watergate::core::_semaphore_owner::check_expired_locks(uint64_t expiry_time) {
+    CHECK(expiry_time > 0);
+
+    uint32_t counts[MAX_PRIORITY_ALLOWED];
+    memset(counts, 0, (MAX_PRIORITY_ALLOWED * sizeof(uint32_t)));
+
+    lock_table_manager *tm = get_table_manager();
+    CHECK_NOT_NULL(tm);
+
+    tm->check_expired_locks(expiry_time, counts);
+    for (int ii = 0; ii < MAX_PRIORITY_ALLOWED; ii++) {
+        if (counts[ii] > 0) {
+            LOG_WARN("Force releasing semaphore locks. [name=%s][priority=%d][count=%d]", name->c_str(), ii,
+                     counts[ii]);
+            sem_t *sem = get(ii);
+            if (IS_VALID_SEM_PTR(sem)) {
+                for (int jj = 0; jj < counts[ii]; jj++) {
+                    sem_post(sem);
+                }
+            } else {
+                LOG_ERROR("Invalid semaphore pointer. [name=%s][priority=%d]", name->c_str(), ii);
+            }
+        }
+    }
+}
+
+void com::watergate::core::_semaphore_owner::check_expired_records(uint64_t expiry_time) {
+    CHECK(expiry_time > 0);
+
+    lock_table_manager *tm = get_table_manager();
+    CHECK_NOT_NULL(tm);
+    tm->reset_expired_records(expiry_time);
 }

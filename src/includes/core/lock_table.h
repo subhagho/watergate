@@ -47,6 +47,7 @@ namespace com {
                 }
             };
 
+
             class lock_table {
             protected:
                 string name;
@@ -63,7 +64,7 @@ namespace com {
                 const _lock_record *get_record(int index) {
                     CHECK_STATE_AVAILABLE(state);
 
-                    assert(index >= 0 && index < DEFAULT_MAX_RECORDS);
+                    CHECK(index >= 0 && index < DEFAULT_MAX_RECORDS);
                     _lock_table *ptr = (_lock_table *) mem_ptr;
 
                     return &ptr->records[index];
@@ -162,6 +163,42 @@ namespace com {
                     }
                 }
 
+                void check_expired_locks(uint64_t expiry_time, uint32_t *counts) {
+                    CHECK_STATE_AVAILABLE(state);
+                    CHECK_NOT_NULL(counts);
+
+                    _lock_table *ptr = (_lock_table *) mem_ptr;
+                    for (int ii = 0; ii < DEFAULT_MAX_RECORDS; ii++) {
+                        _lock_record *rec = &ptr->records[ii];
+                        if (rec->used) {
+                            for (int jj = 0; jj < MAX_PRIORITY_ALLOWED; jj++) {
+                                uint64_t at = rec->lock.locks[jj].acquired_time;
+                                uint64_t now = time_utils::now();
+                                if ((at + expiry_time) <= now) {
+                                    counts[jj]++;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                void reset_expired_records(uint64_t expiry_time) {
+                    CHECK_STATE_AVAILABLE(state);
+
+                    _lock_table *ptr = (_lock_table *) mem_ptr;
+                    for (int ii = 0; ii < DEFAULT_MAX_RECORDS; ii++) {
+                        _lock_record *rec = &ptr->records[ii];
+                        if (rec->used) {
+                            uint64_t ut = rec->app.last_active_ts;
+                            uint64_t now = time_utils::now();
+                            if ((ut + expiry_time) <= now) {
+                                LOG_WARN("Resetting expired application record. [app name=%s][pid=%d]",
+                                         rec->app.app_name, rec->app.proc_id);
+                                remove_record(ii);
+                            }
+                        }
+                    }
+                }
             };
 
             class lock_table_client : public lock_table {

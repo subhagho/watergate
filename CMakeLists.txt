@@ -25,6 +25,7 @@ elseif (${UNIX})
     set(WG_LIBRARIES "pthread" "uuid" "rt")
 endif ()
 
+
 MESSAGE("Using libraries : #" ${WG_LIBRARIES} "#")
 
 add_executable(main src/test/main.cpp)
