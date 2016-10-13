@@ -77,7 +77,9 @@ namespace com {
                 }
 
                 void init(const ConfigValue *parent, const Path *workdir, const string appname) {
-                    assert(NOT_NULL(parent));
+                    CHECK_NOT_NULL(parent);
+                    CHECK_NOT_NULL(workdir);
+                    CHECK_NOT_EMPTY(appname);
 
                     Path *file = nullptr;
                     size_t size = 1 * 1024 * 1024;
@@ -206,7 +208,6 @@ namespace com {
                        const spd::level::level_enum level,
                        const string format) {
                     cout << "Initializing logger...\n";
-                    cout << "Logging to file. [file=" << filename << "]\n";
                     cout << "Logging level = " << get_level_string(level) << "\n";
                     cout << "Console Logging enabeled? " << (console_enabled ? "true" : "false") << "\n";
 
@@ -217,8 +218,12 @@ namespace com {
                         console->set_level(level);
                     if (!IS_EMPTY(filename)) {
                         logger = spd::rotating_logger_mt(DEFAULT_LOGGER_NAME, filename, size, max_files);
-                        if (NOT_NULL(logger))
+                        if (NOT_NULL(logger)) {
                             logger->set_level(level);
+                            cout << "Logging to file. [file=" << filename << "]\n";
+                        } else {
+                            cout << "Error initializing file logger. [log file=" << filename << "]\n";
+                        }
                     }
                 }
 

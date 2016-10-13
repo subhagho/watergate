@@ -35,7 +35,11 @@
           },
           "priorities": "3"
         }
-      ]
+      ],
+      "manager": {
+        "lock.reset.time": "5s",
+        "record.reset.time": "30s"
+      }
     },
     "test-lock-client": {
       "process": "/work/dev/wookler/watergate/test/cmake/test_lock_client",

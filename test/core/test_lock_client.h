@@ -9,11 +9,14 @@
 
 #include "includes/common/_env.h"
 #include "includes/core/control_def.h"
+#include "includes/core/init_utils.h"
 
 #include "includes/ext/options_args.h"
 
 #define CONFIG_FILE getenv("CONFIG_FILE_PATH")
 #define CONTROL_DEF_CONFIG_PATH "/configuration/control/def"
+#define CONTROL_CONFIG_PATH "/configuration/control"
+
 
 #define TLC_CONFIG_NODE "/configuration/test-lock-client"
 #define TCL_CONFIG_VALUE_PROCESS "process"

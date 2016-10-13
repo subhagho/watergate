@@ -177,6 +177,8 @@ namespace com {
                                     uint64_t now = time_utils::now();
                                     if ((at + expiry_time) <= now) {
                                         counts[jj]++;
+                                        rec->lock.locks[jj].has_lock = false;
+                                        rec->lock.locks[jj].acquired_time = 0;
                                     }
                                 }
                             }
@@ -208,7 +210,6 @@ namespace com {
             class lock_table_client : public lock_table {
             private:
                 _lock_record *lock_record;
-                exclusive_lock *shared_lock = nullptr;
 
                 bool is_lock_active(int priority) {
                     if (lock_record->lock.locks[priority].has_lock) {
@@ -238,7 +239,6 @@ namespace com {
                         }
                     }
 
-                    CHECK_AND_FREE(shared_lock);
                 }
 
                 void init(const _app *app, string name, resource_def *resrouce) {
@@ -254,13 +254,6 @@ namespace com {
 
                     lock_record = create_new_record(app->get_name(), app->get_id(), pid);
 
-                    string sl_name = SHARED_LOCK_NAME(pid);
-                    shared_lock = new exclusive_lock(&sl_name);
-                    shared_lock->create();
-                    shared_lock->reset();
-
-                    strncpy(lock_record->app.table_lock_name, sl_name.c_str(), sl_name.length());
-                    LOG_DEBUG("Added shared lock entry. [name=%s]", lock_record->app.table_lock_name);
                 }
 
                 _lock_record *new_record(string app_name, string app_id, pid_t pid) {
@@ -288,16 +281,7 @@ namespace com {
                 lock_acquire_enum has_valid_lock(int priority) {
                     CHECK_STATE_AVAILABLE(state);
 
-                    if (!shared_lock->wait_lock()) {
-                        lock_table_error te = LOCK_TABLE_ERROR(
-                                "Error getting lock to update table. [name=%s][error=%s]",
-                                *shared_lock->get_name()->c_str(),
-                                strerror(errno));
-                        LOG_CRITICAL(te.what());
-                        state.set_error(&te);
 
-                        throw te;
-                    }
                     lock_acquire_enum r = None;
                     pid_t pid = getpid();
                     if (lock_record->app.proc_id != pid) {
@@ -316,16 +300,7 @@ namespace com {
                             r = Locked;
                         }
                     }
-                    if (!shared_lock->release_lock()) {
-                        lock_table_error te = LOCK_TABLE_ERROR(
-                                "Error getting lock to update table. [name=%s][error=%s]",
-                                *shared_lock->get_name()->c_str(),
-                                strerror(errno));
-                        LOG_CRITICAL(te.what());
-                        state.set_error(&te);
 
-                        throw te;
-                    }
                     return r;
                 }
 

@@ -33,7 +33,6 @@
 typedef struct {
     char app_name[MAX_STRING_SIZE];
     char app_id[MAX_STRING_SIZE];
-    char table_lock_name[PSEMNAMLEN + 1];
     pid_t proc_id;
     uint64_t register_time = 0;
     uint64_t last_active_ts = 0;
@@ -251,7 +250,6 @@ namespace com {
                     memset(record->app.app_name, 0, MAX_STRING_SIZE);
                     record->app.last_active_ts = 0;
                     record->app.register_time = 0;
-                    memset(record->app.table_lock_name, 0, PSEMNAMLEN + 1);
 
                     // Reset Lock handles.
                     record->lock.quota_total = 0;

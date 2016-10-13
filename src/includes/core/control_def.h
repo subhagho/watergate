@@ -130,6 +130,7 @@ namespace com {
                     }
 
                     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
+                    LOG_DEBUG("[pid=%d] Registering current thread.", getpid());
 
                     thread_lock_record *rec = sem_c->register_thread();
                     if (NOT_NULL(rec)) {

@@ -272,12 +272,17 @@ namespace com {
                     thread_lock_record *r = nullptr;
 
                     string id = thread_lock_record::get_current_thread();
+                    LOG_DEBUG("Registering thread. [id=%s]", id.c_str());
                     unordered_map<string, thread_lock_record *>::iterator iter = threads.find(id);
                     if (iter != threads.end()) {
                         r = iter->second;
+                        CHECK_NOT_NULL(r);
                     } else {
+                        LOG_DEBUG("Creating new thread handle. [id=%s]", id.c_str());
                         thread_lock_ptr *ptr = thread_lock_record::create_new_ptr(priorities);
+                        CHECK_NOT_NULL(ptr);
                         r = new thread_lock_record(ptr, priorities);
+                        CHECK_NOT_NULL(r);
                         threads.insert(make_pair(ptr->thread_id, r));
                     }
                     return r;

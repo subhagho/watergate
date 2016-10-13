@@ -4,6 +4,8 @@
 
 #include "includes/core/control_manager.h"
 
+#define CONFIG_DEF_NODE_PATH "./def"
+#define CONFIG_MANAGER_NODE_PATH "./manager"
 
 void com::watergate::core::control_manager::run(control_manager *owner) {
     CHECK_NOT_NULL(owner);
@@ -35,38 +37,48 @@ void com::watergate::core::control_manager::run(control_manager *owner) {
 }
 
 void com::watergate::core::control_manager::init(const _app *app, const ConfigValue *config) {
-    create(app, config, true);
+    CHECK_NOT_NULL(config);
+
+    const ConfigValue *dn = config->find(CONFIG_DEF_NODE_PATH);
+    CHECK_NOT_NULL(dn);
+
+    create(app, dn, true);
 
     clear_locks();
 
-
-    string ss = DEFAULT_LOCK_RESET_TIME;
-    {
-        const BasicConfigValue *cn = Config::get_value(CONST_CM_CONFIG_LOCK_RESET_TIME, config);
-        if (!IS_NULL(cn)) {
-            const string sv = cn->get_value();
-            if (!IS_EMPTY(sv)) {
-                ss = string(sv);
+    const ConfigValue *mn = config->find(CONFIG_MANAGER_NODE_PATH);
+    if (NOT_NULL(mn)) {
+        string ss = DEFAULT_LOCK_RESET_TIME;
+        {
+            const BasicConfigValue *cn = Config::get_value(CONST_CM_CONFIG_LOCK_RESET_TIME, mn);
+            if (!IS_NULL(cn)) {
+                const string sv = cn->get_value();
+                if (!IS_EMPTY(sv)) {
+                    ss = string(sv);
+                }
             }
         }
-    }
 
-    lock_timeout = common_utils::parse_duration(ss);
-    PRECONDITION(lock_timeout > 0);
-    LOG_INFO("Using lock timeout value %lu msec.", lock_timeout);
-    ss = DEFAULT_RECORD_RESET_TIME;
-    {
-        const BasicConfigValue *cn = Config::get_value(CONST_CM_CONFIG_RECORD_RESET_TIME, config);
-        if (!IS_NULL(cn)) {
-            const string sv = cn->get_value();
-            if (!IS_EMPTY(sv)) {
-                ss = string(sv);
+        lock_timeout = common_utils::parse_duration(ss);
+        PRECONDITION(lock_timeout > 0);
+        LOG_INFO("Using lock timeout value %lu msec.", lock_timeout);
+        ss = DEFAULT_RECORD_RESET_TIME;
+        {
+            const BasicConfigValue *cn = Config::get_value(CONST_CM_CONFIG_RECORD_RESET_TIME, mn);
+            if (!IS_NULL(cn)) {
+                const string sv = cn->get_value();
+                if (!IS_EMPTY(sv)) {
+                    ss = string(sv);
+                }
             }
         }
-    }
 
-    record_timeout = common_utils::parse_duration(ss);
-    PRECONDITION(record_timeout > 0);
+        record_timeout = common_utils::parse_duration(ss);
+        PRECONDITION(record_timeout > 0);
+    } else {
+        lock_timeout = common_utils::parse_duration(DEFAULT_LOCK_RESET_TIME);
+        record_timeout = common_utils::parse_duration(DEFAULT_RECORD_RESET_TIME);
+    }
     LOG_INFO("Using record reset timeout value %lu msec.", record_timeout);
 
     start();

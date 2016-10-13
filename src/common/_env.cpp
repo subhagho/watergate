@@ -64,7 +64,7 @@ void com::watergate::common::_env::create(string filename, string app_name) {
 
         metrics_utils::init();
 
-        LOG_INFO("Initialized environement. [config=%s]", filename.c_str());
+        LOG_INFO("Initialized environment. [config=%s]", filename.c_str());
         state.set_state(Available);
     } catch (const exception &e) {
         state.set_error(&e);

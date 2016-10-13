@@ -111,7 +111,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
     PRECONDITION(priority >= 0 && priority < priorities);
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
-            ASSERT(NOT_NULL(semaphores));
+    ASSERT(NOT_NULL(semaphores));
 
     std::lock_guard<std::mutex> guard(counts[priority]->priority_lock);
 
@@ -182,7 +182,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
 lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double quota, int base_priority, bool wait) {
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
-            ASSERT(NOT_NULL(semaphores));
+    ASSERT(NOT_NULL(semaphores));
 
     std::lock_guard<std::mutex> guard(counts[BASE_PRIORITY]->priority_lock);
     thread_lock_ptr *t_ptr = nullptr;
@@ -258,7 +258,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double 
 bool com::watergate::core::_semaphore_client::release_lock_base(int base_priority) {
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
-            ASSERT(NOT_NULL(semaphores));
+    ASSERT(NOT_NULL(semaphores));
 
     std::lock_guard<std::mutex> guard(counts[BASE_PRIORITY]->priority_lock);
     thread_lock_ptr *t_ptr = nullptr;
@@ -272,7 +272,7 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
                     t_ptr->thread_id.c_str(), BASE_PRIORITY, base_priority,
                     t_ptr->priority_lock_index[BASE_PRIORITY]->id,
                     counts[BASE_PRIORITY]->index);
-            return true;
+            return false;
         }
     } else {
         string tid = thread_lock_record::get_current_thread();
@@ -332,7 +332,7 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
     PRECONDITION(priority >= 0 && priority < priorities);
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
-            ASSERT(NOT_NULL(semaphores));
+    ASSERT(NOT_NULL(semaphores));
 
     std::lock_guard<std::mutex> guard(counts[priority]->priority_lock);
     thread_lock_ptr *t_ptr = nullptr;
@@ -345,7 +345,7 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
                     "Lock index out-of-sync. [thread=%s][priority=%d][base priority=%d][current index=%d][new index=%d]",
                     t_ptr->thread_id.c_str(), priority, base_priority, t_ptr->priority_lock_index[priority]->id,
                     counts[priority]->index);
-            return true;
+            return false;
         }
     } else {
         string tid = thread_lock_record::get_current_thread();

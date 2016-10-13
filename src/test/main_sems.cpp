@@ -8,8 +8,11 @@
 #include "includes/common/common.h"
 #include "includes/common/_env.h"
 #include "includes/core/control_manager.h"
+#include "includes/core/init_utils.h"
 
 #define CONTROL_DEF_CONFIG_PATH "/configuration/control/def"
+#define CONTROL_CONFIG_PATH "/configuration/control"
+
 
 using namespace com::watergate::core;
 
@@ -175,14 +178,11 @@ int main(int argc, char *argv[]) {
         const Config *config = env->get_config();
                 REQUIRE(NOT_NULL(config));
 
-        const ConfigValue *c_config = config->find(CONTROL_DEF_CONFIG_PATH);
-                REQUIRE(NOT_NULL(c_config));
+        control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
+        REQUIRE(NOT_NULL(manager));
 
-        control_manager *manager = new control_manager();
-        manager->init(env->get_app(), c_config);
-
-        control_client *control = new control_client();
-        control->init(env->get_app(), c_config);
+        control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
+        REQUIRE(NOT_NULL(control));
 
         bool r = metrics_utils::create_metric(METRIC_LOCK_TIME, AverageMetric, true);
         if (!r) {

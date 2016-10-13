@@ -19,11 +19,11 @@ TEST_CASE("Basic control setup", "[com::watergate::core::control_def]") {
     REQUIRE(NOT_NULL(config));
     config->print();
 
-    const ConfigValue *c_config = config->find(CONTROL_DEF_CONFIG_PATH);
-    REQUIRE(NOT_NULL(c_config));
+    control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
+    REQUIRE(NOT_NULL(manager));
 
-    control_manager *control = new control_manager();
-    control->init(env->get_app(), c_config);
+    control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
+    REQUIRE(NOT_NULL(control));
 
     CHECK_AND_FREE(control);
     CHECK_AND_FREE(env);
@@ -37,16 +37,13 @@ TEST_CASE("Basic lock operations", "[com::watergate::core::control_def]") {
         const Config *config = env->get_config();
         REQUIRE(NOT_NULL(config));
 
-        const ConfigValue *c_config = config->find(CONTROL_DEF_CONFIG_PATH);
-        REQUIRE(NOT_NULL(c_config));
-
         LOG_DEBUG("Creating Control Manager...");
-        control_manager *manager = new control_manager();
-        manager->init(env->get_app(), c_config);
+        control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
+        REQUIRE(NOT_NULL(manager));
 
         LOG_DEBUG("Creating Control Client...");
-        control_client *control = new control_client();
-        control->init(env->get_app(), c_config);
+        control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
+        REQUIRE(NOT_NULL(control));
 
         thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);
         if (IS_NULL(tptr)) {
@@ -99,11 +96,13 @@ TEST_CASE("Fail lock operations", "[com::watergate::core::control_def]") {
     const ConfigValue *c_config = config->find(CONTROL_DEF_CONFIG_PATH);
     REQUIRE(NOT_NULL(c_config));
 
-    control_manager *manager = new control_manager();
-    manager->init(env->get_app(), c_config);
+    LOG_DEBUG("Creating Control Manager...");
+    control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
+    REQUIRE(NOT_NULL(manager));
 
-    control_client *control = new control_client();
-    control->init(env->get_app(), c_config);
+    LOG_DEBUG("Creating Control Client...");
+    control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
+    REQUIRE(NOT_NULL(control));
 
     thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);
     if (IS_NULL(tptr)) {
@@ -114,7 +113,7 @@ TEST_CASE("Fail lock operations", "[com::watergate::core::control_def]") {
     int count = 0;
     for (int ii = 0; ii < 8; ii++) {
         int err = 0;
-        lock_acquire_enum r = control->lock(CONTROL_NAME, 0, 500, 1000, &err);
+        lock_acquire_enum r = control->lock(CONTROL_NAME, 0, 50, 1000, &err);
         REQUIRE(err == 0);
         if (r == Locked) {
             LOG_INFO("Successfully acquired lock [name=%s][priority=%d][try=%d]", CONTROL_NAME, 0, ii);
@@ -137,6 +136,57 @@ TEST_CASE("Fail lock operations", "[com::watergate::core::control_def]") {
     CHECK_AND_FREE(env);
 }
 
+TEST_CASE("Test lock timeout operations", "[com::watergate::core::control_def]") {
+    _env *env = create_env(CONFIG_FILE);
+    REQUIRE(NOT_NULL(env));
+
+    const Config *config = env->get_config();
+    REQUIRE(NOT_NULL(config));
+
+    const ConfigValue *c_config = config->find(CONTROL_DEF_CONFIG_PATH);
+    REQUIRE(NOT_NULL(c_config));
+
+    LOG_DEBUG("Creating Control Manager...");
+    control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
+    REQUIRE(NOT_NULL(manager));
+
+    LOG_DEBUG("Creating Control Client...");
+    control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
+    REQUIRE(NOT_NULL(control));
+
+    thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);
+    if (IS_NULL(tptr)) {
+        throw BASE_ERROR("Error registering thread. [name=%s]", CONTROL_NAME);
+    }
+    string tid = tptr->thread_id;
+
+    int count = 0;
+    for (int ii = 0; ii < 8; ii++) {
+        int err = 0;
+        lock_acquire_enum r = control->lock(CONTROL_NAME, 0, 500, 1000, &err);
+        REQUIRE(err == 0);
+        if (r == Locked) {
+            LOG_INFO("Successfully acquired lock [name=%s][priority=%d][try=%d]", CONTROL_NAME, 0, ii);
+            count++;
+        } else
+            LOG_ERROR("Filed to acquired lock [name=%s][priority=%d][try=%d]", CONTROL_NAME, 0, ii);
+
+        uint64_t timeout = manager->get_lock_timeout();
+        usleep(timeout * 2 * 1000);
+        bool b = control->release(CONTROL_NAME, 0);
+        if (b)
+            LOG_INFO("Successfully released lock [name=%s][priority=%d][index=%d]", CONTROL_NAME, 0, ii);
+        else
+            LOG_INFO("Lock already released [name=%s][priority=%d][index=%d]", CONTROL_NAME, 0, ii);
+    }
+
+    control->dump();
+    control->test_assert();
+
+    CHECK_AND_FREE(control);
+    CHECK_AND_FREE(env);
+}
+
 TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]") {
     char cwd[1024];
     if (getcwd(cwd, sizeof(cwd)) != NULL)
@@ -150,11 +200,9 @@ TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]"
     const Config *config = env->get_config();
     REQUIRE(NOT_NULL(config));
 
-    const ConfigValue *c_config = config->find(CONTROL_DEF_CONFIG_PATH);
-    REQUIRE(NOT_NULL(c_config));
-
-    control_manager *manager = new control_manager();
-    manager->init(env->get_app(), c_config);
+    LOG_DEBUG("Creating Control Manager...");
+    control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
+    REQUIRE(NOT_NULL(manager));
 
     const ConfigValue *p_config = config->find(TLC_CONFIG_NODE);
     REQUIRE(NOT_NULL(p_config));
@@ -194,7 +242,7 @@ TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]"
                 LOG_ERROR("Uh-Oh! execl() failed! [index=%d]", ii);/* execl doesn't return unless there's an error */
                 exit(1);
             default:
-                LOG_INFO("Launched child process. [cmd=%s][pid=%d]", p.c_str(), pid);
+                LOG_INFO("Launched child process. [pid=%d]", pid);
                 pids[ii] = pid;
         }
     }

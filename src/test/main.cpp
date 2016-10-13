@@ -9,8 +9,10 @@
 #include "includes/common/_env.h"
 #include "includes/core/control_manager.h"
 #include "core/control/dummy_resource.h"
+#include "includes/core/init_utils.h"
 
 #define CONTROL_DEF_CONFIG_PATH "/configuration/control/def"
+#define CONTROL_CONFIG_PATH "/configuration/control"
 
 using namespace com::watergate::core;
 
@@ -35,19 +37,16 @@ int main(int argc, char *argv[]) {
 
     try {
         _env *env = create_env(getenv("CONFIG_FILE_PATH"));
-                REQUIRE(NOT_NULL(env));
+        REQUIRE(NOT_NULL(env));
 
         const Config *config = env->get_config();
-                REQUIRE(NOT_NULL(config));
+        REQUIRE(NOT_NULL(config));
 
-        const ConfigValue *c_config = config->find(CONTROL_DEF_CONFIG_PATH);
-                REQUIRE(NOT_NULL(c_config));
+        control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
+        REQUIRE(NOT_NULL(manager));
 
-        control_manager *manager = new control_manager();
-        manager->init(env->get_app(), c_config);
-
-        control_client *control = new control_client();
-        control->init(env->get_app(), c_config);
+        control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
+        REQUIRE(NOT_NULL(control));
 
         thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);
         if (IS_NULL(tptr)) {
@@ -57,21 +56,21 @@ int main(int argc, char *argv[]) {
 
         int err = 0;
         lock_acquire_enum r = control->lock(CONTROL_NAME, 0, 500, &err);
-                REQUIRE(err == 0);
-                REQUIRE(r == Locked);
+        REQUIRE(err == 0);
+        REQUIRE(r == Locked);
         LOG_INFO("Successfully acquired lock [name=%s][priority=%d]", CONTROL_NAME, 0);
 
         bool b = control->release(CONTROL_NAME, 0);
-                REQUIRE(b);
+        REQUIRE(b);
         LOG_INFO("Successfully released lock [name=%s][priority=%d]", CONTROL_NAME, 0);
 
         r = control->lock(CONTROL_NAME, 1, 500, &err);
-                REQUIRE(err == 0);
-                REQUIRE(r == Locked);
+        REQUIRE(err == 0);
+        REQUIRE(r == Locked);
         LOG_INFO("Successfully acquired lock [name=%s][priority=%d]", CONTROL_NAME, 1);
 
         b = control->release(CONTROL_NAME, 1);
-                REQUIRE(b);
+        REQUIRE(b);
         LOG_INFO("Successfully released lock [name=%s][priority=%d]", CONTROL_NAME, 1);
 
         control->dump();

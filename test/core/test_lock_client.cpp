@@ -11,14 +11,15 @@
 #define REQUIRE _assert
 
 void com::watergate::tests::common::basic_lock_client::setup() {
+    pid_t pid = getpid();
+
     const Config *config = env->get_config();
-    assert(NOT_NULL(config));
+    CHECK_NOT_NULL(config);
 
-    const ConfigValue *c_config = config->find(CONTROL_DEF_CONFIG_PATH);
-    assert(NOT_NULL(c_config));
+    LOG_DEBUG("[pid=%d] Creating Control Client...", pid);
+    control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
+    REQUIRE(NOT_NULL(control));
 
-    control = new control_client();
-    control->init(env->get_app(), c_config);
     CHECK_STATE_AVAILABLE(control->get_state());
 
     const ConfigValue *t_config = config->find(TLC_CONFIG_NODE);
@@ -43,57 +44,66 @@ void com::watergate::tests::common::basic_lock_client::setup() {
     if (lock_tries <= 0)
         throw CONFIG_ERROR("Invalid Test Client configuration. [node=%s][value=%d]", TCL_CONFIG_VALUE_TRIES,
                            lock_tries);
+    LOG_DEBUG("[pid=%d] Setup done...", pid);
 }
 
 void com::watergate::tests::common::basic_lock_client::run() {
-    pid_t pid = getpid();
-    thread_lock_ptr *tptr = control->register_thread(FS_CONTROL_NAME);
-    if (IS_NULL(tptr)) {
-        throw BASE_ERROR("Error registering thread. [name=%s]", FS_CONTROL_NAME);
-    }
-    string tid = tptr->thread_id;
-    int count = 0;
-    LOG_INFO("Running lock control client. [pid=%d]", pid);
+    try {
+        pid_t pid = getpid();
+        LOG_INFO("[pid=%d] Running lock control client. ", pid);
+        CHECK_NOT_NULL(control);
 
-    timer t;
+        thread_lock_ptr *tptr = control->register_thread(FS_CONTROL_NAME);
+        if (IS_NULL(tptr)) {
+            throw BASE_ERROR("Error registering thread. [name=%s]", FS_CONTROL_NAME);
+        }
+        string tid = tptr->thread_id;
+        int count = 0;
 
-    usleep((priority + 1) * 50 * 1000);
-    for (int ii = 0; ii < 8; ii++) {
-        while (true) {
-            int err = 0;
-            t.restart();
-            lock_acquire_enum r = control->lock(FS_CONTROL_NAME, priority, 200, 5000, &err);
-            t.pause();
-            if (r == Locked && err == 0) {
-                LOG_INFO("Successfully acquired lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d]", pid,
-                         tid.c_str(),
-                         FS_CONTROL_NAME, priority,
-                         ii);
-                count++;
-                usleep((2 - priority) * 500 * 1000);
-                bool r = control->release(FS_CONTROL_NAME, priority);
-                if (r) {
-                    LOG_INFO("Successfully released lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d]", pid,
+        timer t;
+
+        usleep((priority + 1) * 50 * 1000);
+        for (int ii = 0; ii < 8; ii++) {
+            while (true) {
+                int err = 0;
+                t.restart();
+                lock_acquire_enum r = control->lock(FS_CONTROL_NAME, priority, 200, 5000, &err);
+                t.pause();
+                if (r == Locked && err == 0) {
+                    LOG_INFO("Successfully acquired lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d]", pid,
                              tid.c_str(),
                              FS_CONTROL_NAME, priority,
                              ii);
-                }
-                break;
-            } else if (err != 0) {
-                LOG_ERROR("Filed to acquired lock [thread=%s][name=%s][priority=%d][try=%d][response=%d][error=%d]",
-                          tid.c_str(),
-                          FS_CONTROL_NAME, priority, ii, r, err);
-            } else
-                LOG_ERROR("Filed to acquired lock [thread=%s][name=%s][priority=%d][try=%d][response=%d]", tid.c_str(),
-                          FS_CONTROL_NAME, priority, ii, r);
+                    count++;
+                    usleep((2 - priority) * 500 * 1000);
+                    bool r = control->release(FS_CONTROL_NAME, priority);
+                    if (r) {
+                        LOG_INFO("Successfully released lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d]", pid,
+                                 tid.c_str(),
+                                 FS_CONTROL_NAME, priority,
+                                 ii);
+                    }
+                    break;
+                } else if (err != 0) {
+                    LOG_ERROR("Filed to acquired lock [thread=%s][name=%s][priority=%d][try=%d][response=%d][error=%d]",
+                              tid.c_str(),
+                              FS_CONTROL_NAME, priority, ii, r, err);
+                } else
+                    LOG_ERROR("Filed to acquired lock [thread=%s][name=%s][priority=%d][try=%d][response=%d]",
+                              tid.c_str(),
+                              FS_CONTROL_NAME, priority, ii, r);
+            }
+            START_ALARM(sleep_timeout * (priority + 1));
         }
-        START_ALARM(sleep_timeout * (priority + 1));
+
+        LOG_DEBUG("[pid=%d][priority=%d] Finished executing. [execution time=%lu]", pid, priority,
+                  t.get_current_elapsed());
+
+        control->dump();
+        control->test_assert();
+    } catch (const exception &e) {
+        LOG_CRITICAL("Run exited with error. [error=%s]", e.what());
     }
-
-    LOG_DEBUG("[pid=%d][priority=%d] Finished executing. [execution time=%lu]", pid, priority, t.get_current_elapsed());
-
-    control->dump();
-    control->test_assert();
 }
 
 int main(int argc, char *argv[]) {
@@ -155,10 +165,14 @@ int main(int argc, char *argv[]) {
         client->setup();
         client->run();
 
+        CHECK_AND_FREE(client);
         CHECK_AND_FREE(env);
+        exit(0);
     } catch (const exception &e) {
         cout << "ERROR : " << e.what() << "\n";
+        exit(-1);
     } catch (...) {
         cout << "Unkown exception.\n";
+        exit(-1);
     }
 }

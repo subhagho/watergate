@@ -63,6 +63,13 @@ namespace com {
                     }
                 }
 
+                uint64_t get_record_timeout() {
+                    return record_timeout;
+                }
+
+                uint64_t get_lock_timeout() {
+                    return lock_timeout;
+                }
             };
         }
     }
