@@ -16,7 +16,7 @@
 #include "includes/common/base_error.h"
 
 #define MAX_PRIORITY_ALLOWED 8
-#define DEFAULT_MAX_RECORDS 2048
+#define DEFAULT_MAX_RECORDS 1024
 #define MAX_STRING_SIZE 64
 #define FREE_INDEX_USED -999
 
@@ -41,6 +41,7 @@ typedef struct {
 typedef struct {
     bool has_lock = false;
     uint64_t acquired_time = 0;
+    bool force_released = false;
 } _priority_lock;
 
 typedef struct {
@@ -258,6 +259,7 @@ namespace com {
                     for (int ii = 0; ii < MAX_PRIORITY_ALLOWED; ii++) {
                         record->lock.locks[ii].acquired_time = 0;
                         record->lock.locks[ii].has_lock = false;
+                        record->lock.locks[ii].force_released = false;
                     }
                 }
             };

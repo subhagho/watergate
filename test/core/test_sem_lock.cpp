@@ -172,7 +172,7 @@ TEST_CASE("Test lock timeout operations", "[com::watergate::core::control_def]")
             LOG_ERROR("Filed to acquired lock [name=%s][priority=%d][try=%d]", CONTROL_NAME, 0, ii);
 
         uint64_t timeout = manager->get_lock_timeout();
-        usleep(timeout * 2 * 1000);
+        usleep(timeout * 3 * 1000);
         bool b = control->release(CONTROL_NAME, 0);
         if (b)
             LOG_INFO("Successfully released lock [name=%s][priority=%d][index=%d]", CONTROL_NAME, 0, ii);

@@ -178,6 +178,7 @@ namespace com {
                                     if ((at + expiry_time) <= now) {
                                         counts[jj]++;
                                         rec->lock.locks[jj].has_lock = false;
+                                        rec->lock.locks[jj].force_released = true;
                                         rec->lock.locks[jj].acquired_time = 0;
                                     }
                                 }
@@ -299,6 +300,9 @@ namespace com {
                         } else {
                             r = Locked;
                         }
+                    } else if (lock_record->lock.locks[priority].force_released) {
+                        lock_record->lock.locks[priority].force_released = false;
+                        r = Expired;
                     }
 
                     return r;

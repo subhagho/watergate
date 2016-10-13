@@ -15,7 +15,7 @@
 #define CONST_CM_CONFIG_LOCK_RESET_TIME "lock.reset.time"
 #define CONST_CM_CONFIG_RECORD_RESET_TIME "record.reset.time"
 
-#define DEFAULT_CONTROL_THREAD_SLEEP 10 * 1000 // 10 seconds
+#define DEFAULT_CONTROL_THREAD_SLEEP 5 * 1000 // 10 seconds
 
 namespace com {
     namespace watergate {
