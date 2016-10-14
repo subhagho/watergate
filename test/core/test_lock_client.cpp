@@ -128,23 +128,28 @@ int main(int argc, char *argv[]) {
             return 0;
         }
 
-        _env *env = nullptr;
         option::Option o = options[CONFIG];
         option::Option i = options[INDEX];
+        int index = -1;
         if (o && o.count() > 0 && i && i.count() > 0) {
             string configf = o.arg;
-            int index = atoi(i.arg);
+            index = atoi(i.arg);
             if (!IS_EMPTY(configf) && index >= 0) {
-                env = new _env();
                 string pname = com::watergate::common::common_utils::format("basic_lock_client.%d", index);
-                env->create(configf, pname);
+                init_utils::create_env(CONFIG_FILE);
+                const _env *env = init_utils::get_env();
+                REQUIRE(NOT_NULL(env));
+
+                const Config *config = init_utils::get_config();
+                REQUIRE(NOT_NULL(config));
+
             } else
                 throw CONFIG_ERROR("NULL/empty configuration file path specified.");
         } else {
             option::printUsage(std::cout, usage);
             return -1;
         }
-        CHECK_ENV_STATE(env);
+        const _env *env = init_utils::get_env();
 
         int priority = -1;
         o = options[PRIORITY];
@@ -164,9 +169,11 @@ int main(int argc, char *argv[]) {
                 env, priority);
         client->setup();
         client->run();
-
         CHECK_AND_FREE(client);
-        CHECK_AND_FREE(env);
+
+        init_utils::dispose();
+
+        LOG_DEBUG("[pid=%d][index=%d] Exiting run...", getpid(), index);
         exit(0);
     } catch (const exception &e) {
         cout << "ERROR : " << e.what() << "\n";

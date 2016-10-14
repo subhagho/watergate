@@ -21,25 +21,15 @@ using namespace com::watergate::core;
 #define METRIC_LOCK_TIME "lock.acquire.wait.time"
 #define LOCK_TABLE_NAME "Test lock-table"
 
-_env *create_env(const string file) {
-    try {
-        _env *env = new _env();
-        env->create(file);
-        CHECK_ENV_STATE(env);
-        return env;
-    } catch (exception &e) {
-        cout << "error : " << e.what() << "\n";
-        return nullptr;
-    }
-}
-
 int main(int argc, char *argv[]) {
 
     try {
-        _env *env = create_env(getenv("CONFIG_FILE_PATH"));
+
+        init_utils::create_env(getenv("CONFIG_FILE_PATH"));
+        const _env *env = init_utils::get_env();
         REQUIRE(NOT_NULL(env));
 
-        const Config *config = env->get_config();
+        const Config *config = init_utils::get_config();
         REQUIRE(NOT_NULL(config));
 
         control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
@@ -75,12 +65,17 @@ int main(int argc, char *argv[]) {
 
         control->dump();
 
-        CHECK_AND_FREE(control);
         CHECK_AND_FREE(manager);
-        CHECK_AND_FREE(env);
+
+        init_utils::dispose();
+
+        exit(0);
+
     } catch (const exception &e) {
         cout << "ERROR : " << e.what() << "\n";
+        exit(-1);
     } catch (...) {
         cout << "Unknown error...\n";
+        exit(-1);
     }
 }

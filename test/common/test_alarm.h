@@ -8,8 +8,7 @@
 #define CATCH_CONFIG_MAIN
 
 #include <iostream>
-#include "../include/catch.hpp"
-#include "includes/common/_env.h"
+
 #include "test_common.h"
 #include "includes/common/timer.h"
 #include "includes/common/alarm.h"

@@ -6,10 +6,11 @@
 
 
 TEST_CASE("Test time function.", "[com::watergate::common::timer]") {
-    _env *env = create_env(CONFIG_FILE);
+    init_utils::create_env(CONFIG_FILE);
+    const _env *env = init_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
-    const Config *config = env->get_config();
+    const Config *config = init_utils::get_config();
     REQUIRE(NOT_NULL(config));
 
     timer t;
@@ -21,14 +22,15 @@ TEST_CASE("Test time function.", "[com::watergate::common::timer]") {
 
     LOG_INFO("Recorded elapsed time = %d", t.get_elapsed());
 
-    CHECK_AND_FREE(env);
+    init_utils::dispose();
 }
 
 TEST_CASE("Test alarm with callback.", "[com::watergate::common::alarm]") {
-    _env *env = create_env(CONFIG_FILE);
+    init_utils::create_env(CONFIG_FILE);
+    const _env *env = init_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
-    const Config *config = env->get_config();
+    const Config *config = init_utils::get_config();
     REQUIRE(NOT_NULL(config));
 
     timer t;
@@ -52,5 +54,5 @@ TEST_CASE("Test alarm with callback.", "[com::watergate::common::alarm]") {
 
     LOG_INFO("Recorded elapsed time = %d", t.get_elapsed());
 
-    CHECK_AND_FREE(env);
+    init_utils::dispose();
 }

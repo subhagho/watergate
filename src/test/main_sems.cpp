@@ -20,18 +20,6 @@ using namespace com::watergate::core;
 #define REQUIRE _assert
 #define METRIC_LOCK_TIME "lock.acquire.wait.time"
 
-_env *create_env(const string file) {
-    try {
-        _env *env = new _env();
-        env->create(file);
-        CHECK_ENV_STATE(env);
-        return env;
-    } catch (exception &e) {
-        cout << "error : " << e.what() << "\n";
-        return nullptr;
-    }
-}
-
 typedef struct {
     string thread_id;
     uint32_t thread_index;
@@ -170,13 +158,14 @@ int main(int argc, char *argv[]) {
             throw BASE_ERROR("Missing required argument. <config file>");
         }
         string cf(argv[1]);
-        _assert(!IS_EMPTY(cf));
+        REQUIRE(!IS_EMPTY(cf));
 
-        _env *env = create_env(cf);
-                REQUIRE(NOT_NULL(env));
+        init_utils::create_env(getenv("CONFIG_FILE_PATH"));
+        const _env *env = init_utils::get_env();
+        REQUIRE(NOT_NULL(env));
 
-        const Config *config = env->get_config();
-                REQUIRE(NOT_NULL(config));
+        const Config *config = init_utils::get_config();
+        REQUIRE(NOT_NULL(config));
 
         control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
         REQUIRE(NOT_NULL(manager));
@@ -232,9 +221,8 @@ int main(int argc, char *argv[]) {
         metrics_utils::dump();
 
         CHECK_AND_FREE(manager);
-        CHECK_AND_FREE(control);
-        CHECK_AND_FREE(env);
 
+        init_utils::dispose();
 
     } catch (const exception &e) {
         cout << "ERROR : " << e.what() << "\n";

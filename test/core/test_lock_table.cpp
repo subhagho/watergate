@@ -12,11 +12,13 @@ using namespace com::watergate::common;
 
 TEST_CASE("Test SHM based lock table.", "[com::watergate::core::lock_table]") {
     try {
-        _env *env = create_env(getenv("CONFIG_FILE_PATH"));
+        init_utils::create_env(CONFIG_FILE);
+        const _env *env = init_utils::get_env();
         REQUIRE(NOT_NULL(env));
 
-        const Config *config = env->get_config();
+        const Config *config = init_utils::get_config();
         REQUIRE(NOT_NULL(config));
+
         config->print();
 
         dummy_resource *resource = new dummy_resource();
@@ -70,7 +72,8 @@ TEST_CASE("Test SHM based lock table.", "[com::watergate::core::lock_table]") {
         CHECK_AND_FREE(c);
         CHECK_AND_FREE(t);
         CHECK_AND_FREE(resource);
-        CHECK_AND_FREE(env);
+
+        init_utils::dispose();
     } catch (const exception &e) {
         LOG_ERROR(e.what());
         REQUIRE(false);

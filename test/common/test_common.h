@@ -5,16 +5,8 @@
 #ifndef WATERGATE_TEST_COMMON_H
 #define WATERGATE_TEST_COMMON_H
 
-_env *create_env(const string file) {
-    try {
-        _env *env = new _env();
-        env->create(file);
-        CHECK_ENV_STATE(env);
-        return env;
-    } catch (exception &e) {
-        cout << "error : " << e.what() << "\n";
-        return nullptr;
-    }
-}
+#include "../include/catch.hpp"
+#include "includes/common/_env.h"
+#include "includes/core/init_utils.h"
 
 #endif //WATERGATE_TEST_COMMON_H

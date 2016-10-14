@@ -35,6 +35,7 @@ endif ()
 
 MESSAGE("Using libraries : #" ${WG_LIBRARIES} "#")
 
+
 add_executable(main src/test/main.cpp)
 target_link_libraries(main watergate ${WG_LIBRARIES})
 

@@ -12,11 +12,13 @@ using namespace com::watergate::core;
 using namespace com::watergate::common;
 
 TEST_CASE("Basic control setup", "[com::watergate::core::control_def]") {
-    _env *env = create_env(CONFIG_FILE);
+    init_utils::create_env(CONFIG_FILE);
+    const _env *env = init_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
-    const Config *config = env->get_config();
+    const Config *config = init_utils::get_config();
     REQUIRE(NOT_NULL(config));
+
     config->print();
 
     control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
@@ -25,16 +27,18 @@ TEST_CASE("Basic control setup", "[com::watergate::core::control_def]") {
     control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
     REQUIRE(NOT_NULL(control));
 
-    CHECK_AND_FREE(control);
-    CHECK_AND_FREE(env);
+    CHECK_AND_FREE(manager);
+    init_utils::dispose();
+
 }
 
 TEST_CASE("Basic lock operations", "[com::watergate::core::control_def]") {
     try {
-        _env *env = create_env(CONFIG_FILE);
+        init_utils::create_env(CONFIG_FILE);
+        const _env *env = init_utils::get_env();
         REQUIRE(NOT_NULL(env));
 
-        const Config *config = env->get_config();
+        const Config *config = init_utils::get_config();
         REQUIRE(NOT_NULL(config));
 
         LOG_DEBUG("Creating Control Manager...");
@@ -73,9 +77,9 @@ TEST_CASE("Basic lock operations", "[com::watergate::core::control_def]") {
 
         control->dump();
 
-        CHECK_AND_FREE(control);
         CHECK_AND_FREE(manager);
-        CHECK_AND_FREE(env);
+
+        init_utils::dispose();
     } catch (const exception &e) {
         LOG_ERROR(e.what());
         REQUIRE(false);
@@ -87,10 +91,11 @@ TEST_CASE("Basic lock operations", "[com::watergate::core::control_def]") {
 
 
 TEST_CASE("Fail lock operations", "[com::watergate::core::control_def]") {
-    _env *env = create_env(CONFIG_FILE);
+    init_utils::create_env(CONFIG_FILE);
+    const _env *env = init_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
-    const Config *config = env->get_config();
+    const Config *config = init_utils::get_config();
     REQUIRE(NOT_NULL(config));
 
     const ConfigValue *c_config = config->find(CONTROL_DEF_CONFIG_PATH);
@@ -132,15 +137,17 @@ TEST_CASE("Fail lock operations", "[com::watergate::core::control_def]") {
 
     control->dump();
     control->test_assert();
-    CHECK_AND_FREE(control);
-    CHECK_AND_FREE(env);
+
+    CHECK_AND_FREE(manager);
+    init_utils::dispose();
 }
 
 TEST_CASE("Test lock timeout operations", "[com::watergate::core::control_def]") {
-    _env *env = create_env(CONFIG_FILE);
+    init_utils::create_env(CONFIG_FILE);
+    const _env *env = init_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
-    const Config *config = env->get_config();
+    const Config *config = init_utils::get_config();
     REQUIRE(NOT_NULL(config));
 
     const ConfigValue *c_config = config->find(CONTROL_DEF_CONFIG_PATH);
@@ -183,8 +190,9 @@ TEST_CASE("Test lock timeout operations", "[com::watergate::core::control_def]")
     control->dump();
     control->test_assert();
 
-    CHECK_AND_FREE(control);
-    CHECK_AND_FREE(env);
+    CHECK_AND_FREE(manager);
+
+    init_utils::dispose();
 }
 
 TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]") {
@@ -194,10 +202,11 @@ TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]"
     else
         perror("getcwd() error");
 
-    _env *env = create_env(CONFIG_FILE);
+    init_utils::create_env(CONFIG_FILE);
+    const _env *env = init_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
-    const Config *config = env->get_config();
+    const Config *config = init_utils::get_config();
     REQUIRE(NOT_NULL(config));
 
     LOG_DEBUG("Creating Control Manager...");
@@ -260,6 +269,7 @@ TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]"
         LOG_INFO("Process [pid=%d] exited with status [%d]", pids[ii], status);
     }
 
+    init_utils::dispose();
+
     CHECK_AND_FREE(manager);
-    CHECK_AND_FREE(env);
 }

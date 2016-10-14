@@ -23,10 +23,10 @@ if (${APPLE})
     MESSAGE("Host platform: MAC OS X")
 elseif (${UNIX})
     MESSAGE("Host platform:  Other UNIX")
-    set(WG_LIBRARIES "pthread" "uuid" "rt")
+    set(WG_LIBRARIES "pthread uuid rt")
 endif ()
 
-MESSAGE("Using libraries : #" ${WG_LIBRARIES} "#")
+MESSAGE("Using libraries : [" ${WG_LIBRARIES} "]")
 
 add_executable(test_config common/test_config.cpp)
 target_link_libraries(test_config watergate ${CMAKE_THREAD_LIBS_INIT} ${WG_LIBRARIES})
