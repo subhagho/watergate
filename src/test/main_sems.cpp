@@ -6,7 +6,7 @@
 #include <thread>
 
 #include "includes/common/common.h"
-#include "includes/common/_env.h"
+#include "includes/common/__env.h"
 #include "includes/core/control_manager.h"
 #include "includes/core/init_utils.h"
 
@@ -28,7 +28,7 @@ typedef struct {
     uint64_t lock_wait_time;
 } thread_record;
 
-void rund(control_client *control, int priority, thread_record *record) {
+void rund(const control_client *control, int priority, thread_record *record) {
     try {
         thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);
         if (IS_NULL(tptr)) {
@@ -89,7 +89,7 @@ void rund(control_client *control, int priority, thread_record *record) {
     }
 }
 
-void run(control_client *control, int priority, thread_record *record) {
+void run(const control_client *control, int priority, thread_record *record) {
     try {
         thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);
         if (IS_NULL(tptr)) {
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
         REQUIRE(!IS_EMPTY(cf));
 
         init_utils::create_env(getenv("CONFIG_FILE_PATH"));
-        const _env *env = init_utils::get_env();
+        const __env *env = init_utils::get_env();
         REQUIRE(NOT_NULL(env));
 
         const Config *config = init_utils::get_config();
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
         control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
         REQUIRE(NOT_NULL(manager));
 
-        control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
+        const control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
         REQUIRE(NOT_NULL(control));
 
         bool r = metrics_utils::create_metric(METRIC_LOCK_TIME, AverageMetric, true);

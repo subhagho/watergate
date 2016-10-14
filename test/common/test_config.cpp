@@ -9,7 +9,7 @@ using namespace com::watergate::core;
 
 TEST_CASE("Create environment and load configuration", "[com::watergate::common::_env]") {
     init_utils::create_env(CONFIG_FILE);
-    const _env *env = init_utils::get_env();
+    const __env *env = init_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
     const Config *config = init_utils::get_config();
@@ -21,7 +21,7 @@ TEST_CASE("Create environment and load configuration", "[com::watergate::common:
 
     SECTION("Test environment reload") {
         init_utils::create_env(CONFIG_FILE);
-        const _env *env0 = init_utils::get_env();
+        const __env *env0 = init_utils::get_env();
         REQUIRE(NOT_NULL(env0));
 
         init_utils::dispose();
@@ -30,7 +30,7 @@ TEST_CASE("Create environment and load configuration", "[com::watergate::common:
 
 TEST_CASE("Configuration Lookup Test : 1", "[com::watergate::common::Config]") {
     init_utils::create_env(CONFIG_FILE);
-    const _env *env = init_utils::get_env();
+    const __env *env = init_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
     const Config *config = init_utils::get_config();
@@ -80,7 +80,7 @@ TEST_CASE("Configuration Lookup Test : 1", "[com::watergate::common::Config]") {
 
 TEST_CASE("Configuration Lookup Test : 2", "[com::watergate::common::Config]") {
     init_utils::create_env(CONFIG_FILE);
-    const _env *env = init_utils::get_env();
+    const __env *env = init_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
     const Config *config = init_utils::get_config();

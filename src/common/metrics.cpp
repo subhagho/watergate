@@ -6,6 +6,6 @@
 
 mutex com::watergate::common::metrics_utils::g_lock;
 
-_state com::watergate::common::metrics_utils::state;
+__state__ com::watergate::common::metrics_utils::state;
 
-unordered_map<string, _metric *> *com::watergate::common::metrics_utils::metrics = new unordered_map<string, _metric *>();
+unordered_map<string, __metric *> *com::watergate::common::metrics_utils::metrics = new unordered_map<string, __metric *>();

@@ -10,21 +10,21 @@
 namespace com {
     namespace watergate {
         namespace common {
-            enum _callback_state_enum {
+            enum __callback_state_enum {
                 UNKNOWN, SUCCESS, IGNORED, ERROR
             };
 
-            class _callback_state {
+            class __callback_state {
             private:
-                _callback_state_enum state = _callback_state_enum::UNKNOWN;
+                __callback_state_enum state = __callback_state_enum::UNKNOWN;
                 exception *error = nullptr;
 
             public:
-                ~_callback_state() {
+                ~__callback_state() {
                     dispose();
                 }
 
-                void set_state(_callback_state_enum state) {
+                void set_state(__callback_state_enum state) {
                     this->state = state;
                 }
 
@@ -33,7 +33,7 @@ namespace com {
                     this->error = error;
                 }
 
-                const _callback_state_enum get_state() const {
+                const __callback_state_enum get_state() const {
                     return state;
                 }
 
@@ -46,17 +46,17 @@ namespace com {
                 }
             };
 
-            class _callback {
+            class __callback {
             protected:
                 void *context;
-                _callback_state state;
+                __callback_state state;
 
             public:
-                virtual ~_callback() {
+                virtual ~__callback() {
                     state.dispose();
                 }
 
-                const _callback_state get_state() const {
+                const __callback_state get_state() const {
                     return state;
                 }
 
@@ -73,7 +73,7 @@ namespace com {
                     this->context = context;
                 }
 
-                void set_state(_callback_state_enum state) {
+                void set_state(__callback_state_enum state) {
                     this->state.set_state(state);
                 }
 

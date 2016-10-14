@@ -12,7 +12,7 @@
 #include "common_utils.h"
 #include "timer.h"
 #include "log_utils.h"
-#include "_state.h"
+#include "__state__.h"
 
 #define START_TIMER(n) timer _t_##n; \
      _t_##n.start();
@@ -22,20 +22,20 @@
 namespace com {
     namespace watergate {
         namespace common {
-            enum _metric_type_enum {
+            enum __metric_type_enum {
                 BasicMetric, AverageMetric
             };
 
-            class _metric {
+            class __metric {
             protected:
                 string *name;
-                _metric_type_enum type;
+                __metric_type_enum type;
                 double value;
                 bool thread_safe = false;
                 double max_value = 0;
 
             public:
-                _metric(string name) {
+                __metric(string name) {
                     _assert(!IS_EMPTY(name));
 
                     this->type = BasicMetric;
@@ -43,7 +43,7 @@ namespace com {
                     this->value = 0;
                 }
 
-                _metric(string name, bool thread_safe) {
+                __metric(string name, bool thread_safe) {
                     _assert(!IS_EMPTY(name));
 
                     this->type = BasicMetric;
@@ -52,7 +52,7 @@ namespace com {
                     this->thread_safe = thread_safe;
                 }
 
-                virtual ~_metric() {
+                virtual ~__metric() {
                     if (NOT_NULL(name)) {
                         delete (name);
 
@@ -64,7 +64,7 @@ namespace com {
                     return this->name;
                 }
 
-                _metric_type_enum get_type() {
+                __metric_type_enum get_type() {
                     return this->type;
                 }
 
@@ -100,21 +100,21 @@ namespace com {
                 }
             };
 
-            class _avg_metric : public _metric {
+            class _avg_metric : public __metric {
             private:
                 uint64_t count = 0;
 
             public:
-                _avg_metric(string name) : _metric(name) {
+                _avg_metric(string name) : __metric(name) {
                     this->type = AverageMetric;
                 }
 
-                _avg_metric(string name, bool thread_safe) : _metric(name, thread_safe) {
+                _avg_metric(string name, bool thread_safe) : __metric(name, thread_safe) {
                     this->type = AverageMetric;
                 }
 
                 void set_value(double value) override {
-                    _metric::set_value(value);
+                    __metric::set_value(value);
                     this->count++;
                 }
 
@@ -138,8 +138,8 @@ namespace com {
             class metrics_utils {
             private:
                 static mutex g_lock;
-                static unordered_map<string, _metric *> *metrics;
-                static _state state;
+                static unordered_map<string, __metric *> *metrics;
+                static __state__ state;
 
             public:
                 static void init() {
@@ -148,21 +148,21 @@ namespace com {
                     state.set_state(Available);
                 }
 
-                static bool create_metric(string name, _metric_type_enum type, bool thread_safe) {
+                static bool create_metric(string name, __metric_type_enum type, bool thread_safe) {
                     if (!state.is_available())
                         return false;
 
                     std::lock_guard<std::mutex> guard(g_lock);
 
                     if (NOT_NULL(metrics)) {
-                        unordered_map<string, _metric *>::iterator iter = metrics->find(name);
+                        unordered_map<string, __metric *>::iterator iter = metrics->find(name);
                         if (iter != metrics->end()) {
                             return true;
                         }
 
-                        _metric *metric = nullptr;
+                        __metric *metric = nullptr;
                         if (type == BasicMetric) {
-                            metric = new _metric(name, thread_safe);
+                            metric = new __metric(name, thread_safe);
                         } else if (type == AverageMetric) {
                             metric = new _avg_metric(name, thread_safe);
                         }
@@ -183,9 +183,9 @@ namespace com {
                     state.set_state(Disposed);
 
                     if (!IS_EMPTY_P(metrics)) {
-                        unordered_map<string, _metric *>::iterator iter;
+                        unordered_map<string, __metric *>::iterator iter;
                         for (iter = metrics->begin(); iter != metrics->end(); iter++) {
-                            _metric *metric = iter->second;
+                            __metric *metric = iter->second;
                             if (NOT_NULL(metric)) {
                                 delete (metric);
                             }
@@ -200,9 +200,9 @@ namespace com {
                     CHECK_STATE_AVAILABLE(state);
 
                     if (NOT_NULL(metrics)) {
-                        unordered_map<string, _metric *>::iterator iter = metrics->find(name);
+                        unordered_map<string, __metric *>::iterator iter = metrics->find(name);
                         if (iter != metrics->end()) {
-                            _metric *metric = iter->second;
+                            __metric *metric = iter->second;
                             if (NOT_NULL(metric)) {
                                 if (metric->is_thread_safe()) {
                                     std::lock_guard<std::mutex> guard(g_lock);
@@ -229,9 +229,9 @@ namespace com {
                     CHECK_STATE_AVAILABLE(state);
 
                     if (!IS_EMPTY_P(metrics)) {
-                        unordered_map<string, _metric *>::iterator iter;
+                        unordered_map<string, __metric *>::iterator iter;
                         for (iter = metrics->begin(); iter != metrics->end(); iter++) {
-                            _metric *metric = iter->second;
+                            __metric *metric = iter->second;
                             if (NOT_NULL(metric)) {
                                 metric->print();
                             }

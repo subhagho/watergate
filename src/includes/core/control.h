@@ -12,10 +12,10 @@
 #include "includes/common/common.h"
 #include "includes/common/base_error.h"
 #include "includes/common/common_utils.h"
-#include "includes/common/_app.h"
+#include "includes/common/__app.h"
 #include "resource_def.h"
 #include "lock_table.h"
-#include "includes/common/_state.h"
+#include "includes/common/__state__.h"
 
 #define DEFAULT_SEM_MODE 0760
 
@@ -86,7 +86,7 @@ namespace com {
                     return (p >= 0 && p < this->priorities);
                 }
 
-                void create(const _app *app, const ConfigValue *config, bool server);
+                void create(const __app *app, const ConfigValue *config, bool server);
 
             public:
                 virtual ~_semaphore();
@@ -99,12 +99,19 @@ namespace com {
                     return priorities;
                 }
 
-                virtual void init(const _app *app, const ConfigValue *config) = 0;
+                bool is_resource_type(resource_type_enum type) const {
+                    if (NOT_NULL(resource)) {
+                        return (resource->get_type() == type);
+                    }
+                    return false;
+                }
+
+                virtual void init(const __app *app, const ConfigValue *config) = 0;
             };
 
             class _semaphore_owner : public _semaphore {
             private:
-                _state state;
+                __state__ state;
                 lock_table_manager *manager;
 
             public:
@@ -128,7 +135,7 @@ namespace com {
                 }
 
 
-                void init(const _app *app, const ConfigValue *config) override {
+                void init(const __app *app, const ConfigValue *config) override {
                     create(app, config, true);
 
                     table = new lock_table_manager();
@@ -245,7 +252,7 @@ namespace com {
                     }
                 }
 
-                void init(const _app *app, const ConfigValue *config) override {
+                void init(const __app *app, const ConfigValue *config) override {
                     create(app, config, false);
 
                     table = new lock_table_client();
@@ -266,6 +273,10 @@ namespace com {
 
                     lock_table_client *ptr = static_cast<lock_table_client *>(table);
                     return ptr;
+                }
+
+                uint64_t get_quota() {
+                    return client->get_quota();
                 }
 
                 thread_lock_record *register_thread() {
@@ -302,6 +313,13 @@ namespace com {
                 bool release_lock(int priority, int base_priority);
 
                 bool release_lock_base(int base_priority);
+
+                bool accept(const string name) {
+                    if (NOT_NULL(resource)) {
+                        return resource->accept(name);
+                    }
+                    return false;
+                }
 
                 void dump() {
                     LOG_DEBUG("**************[LOCK:%s:%d]**************", name->c_str(), getpid());

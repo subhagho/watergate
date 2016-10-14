@@ -5,10 +5,20 @@
 #ifndef WATERGATE_FILESYSTEM_DRIVER_H
 #define WATERGATE_FILESYSTEM_DRIVER_H
 
+#include <stdlib.h>
 #include <unordered_map>
+
+#ifdef __APPLE__
+
+#include <sys/syslimits.h>
+
+#elif __linux__
+#include <linux/limits.h>
+#endif
 
 #include "includes/core/resource_def.h"
 #include "includes/common/file_utils.h"
+#include "includes/common/log_utils.h"
 
 using namespace com::watergate::core;
 
@@ -30,7 +40,7 @@ namespace com {
                     int concurrency;
 
                 public:
-                    filesystem_driver() : resource_def(IO) {}
+                    filesystem_driver() : resource_def(FS) {}
 
                     ~filesystem_driver() {
                         CHECK_AND_FREE(root_path);
@@ -43,6 +53,25 @@ namespace com {
                     }
 
                     const string *get_resource_name() override;
+
+                    bool accept(const string name) override {
+                        CHECK_NOT_EMPTY(name);
+                        char path[PATH_MAX];
+                        memset(path, 0, PATH_MAX);
+
+                        if (NOT_NULL(realpath(name.c_str(), path))) {
+                            LOG_DEBUG("Requested file path [%s]", path);
+
+                            string str(path);
+                            if (!IS_EMPTY(str)) {
+                                size_t pos = str.find(root_path->get_path());
+                                if (pos == 0) {
+                                    return true;
+                                }
+                            }
+                        }
+                        return false;
+                    }
                 };
             }
         }

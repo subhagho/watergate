@@ -9,7 +9,7 @@
 #include <csignal>
 
 #include "common_utils.h"
-#include "_callback.h"
+#include "__callback.h"
 #include "base_error.h"
 
 #define START_ALARM(t) do {\
@@ -29,7 +29,7 @@ namespace com {
         namespace common {
             class alarm {
             private:
-                _callback *_c = nullptr;
+                __callback *_c = nullptr;
                 long _d;
 
                 static void signal_handler(int signal) {
@@ -41,7 +41,7 @@ namespace com {
                     this->_d = delta;
                 }
 
-                alarm(long delta, _callback *c) {
+                alarm(long delta, __callback *c) {
                     this->_d = delta;
                     this->_c = c;
                 }
@@ -52,7 +52,7 @@ namespace com {
                     assert((this->_d > 0));
                 }
 
-                alarm(string duration, _callback *c) {
+                alarm(string duration, __callback *c) {
                     assert(!IS_EMPTY(duration));
                     this->_d = common_utils::parse_duration(duration);
                     assert((this->_d > 0));
@@ -68,7 +68,7 @@ namespace com {
                     usleep(s_time);
 
                     if (NOT_NULL(_c)) {
-                        _c->set_state(_callback_state_enum::SUCCESS);
+                        _c->set_state(__callback_state_enum::SUCCESS);
                         _c->callback();
                     }
                     return true;

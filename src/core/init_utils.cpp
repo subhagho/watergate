@@ -4,5 +4,5 @@
 
 #include "includes/core/init_utils.h"
 
-_env *com::watergate::core::init_utils::env = nullptr;
+__env *com::watergate::core::init_utils::env = nullptr;
 control_client *com::watergate::core::init_utils::client = nullptr;

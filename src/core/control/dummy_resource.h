@@ -35,6 +35,9 @@ namespace com {
 
                 const string *get_resource_name() override;
 
+                bool accept(const string name) override {
+                    return false;
+                }
             };
         }
     }

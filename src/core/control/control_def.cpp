@@ -7,7 +7,7 @@
 using namespace com::watergate::core;
 
 
-void com::watergate::core::control_def::create(const _app *app, const ConfigValue *config, bool server) {
+void com::watergate::core::control_def::create(const __app *app, const ConfigValue *config, bool server) {
     try {
         CHECK_NOT_NULL(app);
         CHECK_NOT_NULL(config);
@@ -31,7 +31,7 @@ void com::watergate::core::control_def::create(const _app *app, const ConfigValu
     }
 }
 
-void com::watergate::core::control_def::add_resource_lock(const _app *app, const ConfigValue *config, bool server) {
+void com::watergate::core::control_def::add_resource_lock(const __app *app, const ConfigValue *config, bool server) {
     _semaphore *sem = nullptr;
     if (server) {
         sem = new _semaphore_owner();
@@ -76,7 +76,7 @@ com::watergate::core::control_def::~control_def() {
 }
 
 lock_acquire_enum
-com::watergate::core::control_client::try_lock(string name, int priority, int base_priority, double quota) {
+com::watergate::core::control_client::try_lock(string name, int priority, int base_priority, double quota) const {
     CHECK_STATE_AVAILABLE(state);
 
     _semaphore *sem = get_lock(name);
@@ -99,7 +99,7 @@ com::watergate::core::control_client::try_lock(string name, int priority, int ba
 }
 
 lock_acquire_enum
-com::watergate::core::control_client::wait_lock(string name, int priority, int base_priority, double quota) {
+com::watergate::core::control_client::wait_lock(string name, int priority, int base_priority, double quota) const {
     CHECK_STATE_AVAILABLE(state);
 
     _semaphore *sem = get_lock(name);
@@ -122,7 +122,7 @@ com::watergate::core::control_client::wait_lock(string name, int priority, int b
     return r;
 }
 
-bool com::watergate::core::control_client::release_lock(string name, int priority, int base_priority) {
+bool com::watergate::core::control_client::release_lock(string name, int priority, int base_priority) const {
     CHECK_STATE_AVAILABLE(state);
 
     _semaphore *sem = get_lock(name);
@@ -139,7 +139,7 @@ bool com::watergate::core::control_client::release_lock(string name, int priorit
 }
 
 lock_acquire_enum
-com::watergate::core::control_client::lock_get(string name, int priority, double quota, long timeout, int *err) {
+com::watergate::core::control_client::lock_get(string name, int priority, double quota, long timeout, int *err) const {
 
     timer t;
     t.start();
@@ -212,7 +212,7 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
     return ret;
 }
 
-bool com::watergate::core::control_client::release(string name, int priority) {
+bool com::watergate::core::control_client::release(string name, int priority) const {
     CHECK_STATE_AVAILABLE(state);
 
     bool r = true;

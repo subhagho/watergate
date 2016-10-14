@@ -2,11 +2,11 @@
 // Created by Subhabrata Ghosh on 31/08/16.
 //
 
-#include "includes/common/_env.h"
+#include "includes/common/__env.h"
 
-com::watergate::common::_log *LOG = nullptr;
+com::watergate::common::__log *LOG = nullptr;
 
-void com::watergate::common::_env::create(string filename, string app_name) {
+void com::watergate::common::__env::create(string filename, string app_name) {
     try {
         this->config = new Config();
         this->config->create(filename);
@@ -21,7 +21,7 @@ void com::watergate::common::_env::create(string filename, string app_name) {
                         throw ERROR_MISSING_CONFIG(CONST_CONFIG_ENV_PARAM_APPNAME);
                     }
                 }
-                this->app = new _app(app_name);
+                this->app = new __app(app_name);
                 string appdir = this->app->get_app_directory();
                 const string workdir = e_params->get_string(CONFIG_ENV_PARAM_WORKDIR);
                 if (!IS_EMPTY(workdir)) {
@@ -54,11 +54,11 @@ void com::watergate::common::_env::create(string filename, string app_name) {
             } else {
                 setup_defaults();
             }
-            LOG = new _log();
+            LOG = new __log();
             LOG->init(e_node, this->work_dir, this->app->get_name());
         } else {
             setup_defaults();
-            LOG = new _log();
+            LOG = new __log();
             LOG->init();
         }
 
@@ -77,13 +77,13 @@ void com::watergate::common::_env::create(string filename, string app_name) {
     }
 }
 
-const Path *com::watergate::common::_env::get_temp_dir() const {
+const Path *com::watergate::common::__env::get_temp_dir() const {
     CHECK_STATE_AVAILABLE(this->state);
 
     return this->temp_dir;
 }
 
-Path *com::watergate::common::_env::get_temp_dir(string name, mode_t mode) const {
+Path *com::watergate::common::__env::get_temp_dir(string name, mode_t mode) const {
     CHECK_STATE_AVAILABLE(this->state);
     assert(!name.empty());
 
@@ -95,13 +95,13 @@ Path *com::watergate::common::_env::get_temp_dir(string name, mode_t mode) const
     return pp;
 }
 
-const Path *com::watergate::common::_env::get_work_dir() const {
+const Path *com::watergate::common::__env::get_work_dir() const {
     CHECK_STATE_AVAILABLE(this->state);
 
     return this->work_dir;
 }
 
-Path *com::watergate::common::_env::get_work_dir(string name, mode_t mode) const {
+Path *com::watergate::common::__env::get_work_dir(string name, mode_t mode) const {
     CHECK_STATE_AVAILABLE(this->state);
     assert(!name.empty());
 
@@ -113,15 +113,18 @@ Path *com::watergate::common::_env::get_work_dir(string name, mode_t mode) const
     return pp;
 }
 
-com::watergate::common::_env::~_env() {
+com::watergate::common::__env::~__env() {
     this->state.set_state(Disposed);
     metrics_utils::dump();
     metrics_utils::dispose();
 
+    LOG_DEBUG("[pid=%d] Releasing config handle...", getpid());
     CHECK_AND_FREE(this->config);
+    LOG_DEBUG("[pid=%d] Releasing app handle...", getpid());
     CHECK_AND_FREE(this->app);
     CHECK_AND_FREE(temp_dir);
     CHECK_AND_FREE(work_dir);
+    LOG_DEBUG("[pid=%d] Releasing LOG handle...", getpid());
     CHECK_AND_FREE(LOG);
 }
 

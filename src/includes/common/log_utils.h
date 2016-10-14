@@ -5,7 +5,7 @@
 #ifndef WATERGATE_LOG_UTILS_H
 #define WATERGATE_LOG_UTILS_H
 
-#include "_log.h"
+#include "__log.h"
 
 #define LOG_DEBUG(fmt, ...) do { \
     if (com::watergate::common::log_utils::check_log_level(spdlog::level::debug)) { \
@@ -46,7 +46,7 @@
 
 namespace spd = spdlog;
 
-extern com::watergate::common::_log *LOG;
+extern com::watergate::common::__log *LOG;
 
 namespace com {
     namespace watergate {
@@ -54,7 +54,10 @@ namespace com {
             class log_utils {
             public:
                 static bool check_log_level(spd::level::level_enum level) {
-                    return LOG->check_lock_level(level);
+                    if (NOT_NULL(LOG)) {
+                        return LOG->check_lock_level(level);
+                    }
+                    return false;
                 }
 
                 static void critical(string mesg) {
@@ -70,6 +73,8 @@ namespace com {
                         if (NOT_NULL(logger)) {
                             logger->critical(mesg);
                         }
+                    } else {
+                        cerr << mesg << "\n";
                     }
                 }
 
@@ -86,6 +91,8 @@ namespace com {
                         if (NOT_NULL(logger)) {
                             logger->error(mesg);
                         }
+                    } else {
+                        cerr << mesg << "\n";
                     }
                 }
 
@@ -102,6 +109,8 @@ namespace com {
                         if (NOT_NULL(logger)) {
                             logger->warn(mesg);
                         }
+                    } else {
+                        cout << mesg << "\n";
                     }
                 }
 
@@ -118,6 +127,8 @@ namespace com {
                         if (NOT_NULL(logger)) {
                             logger->info(mesg);
                         }
+                    } else {
+                        cout << mesg << "\n";
                     }
                 }
 
@@ -134,6 +145,8 @@ namespace com {
                         if (NOT_NULL(logger)) {
                             logger->debug(mesg);
                         }
+                    } else {
+                        cout << mesg << "\n";
                     }
                 }
 
@@ -150,6 +163,8 @@ namespace com {
                         if (NOT_NULL(logger)) {
                             logger->trace(mesg);
                         }
+                    } else {
+                        cout << mesg << "\n";
                     }
                 }
             };

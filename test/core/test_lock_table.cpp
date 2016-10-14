@@ -13,7 +13,7 @@ using namespace com::watergate::common;
 TEST_CASE("Test SHM based lock table.", "[com::watergate::core::lock_table]") {
     try {
         init_utils::create_env(CONFIG_FILE);
-        const _env *env = init_utils::get_env();
+        const __env *env = init_utils::get_env();
         REQUIRE(NOT_NULL(env));
 
         const Config *config = init_utils::get_config();

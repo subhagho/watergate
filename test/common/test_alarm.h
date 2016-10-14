@@ -34,7 +34,7 @@ public:
     }
 };
 
-class test_callback : public com::watergate::common::_callback {
+class test_callback : public com::watergate::common::__callback {
 public:
     test_callback(test_type *value) {
         this->set_context(value);

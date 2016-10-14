@@ -26,7 +26,7 @@ namespace spd = spdlog;
 namespace com {
     namespace watergate {
         namespace common {
-            class _log {
+            class __log {
             private:
 
                 shared_ptr<spd::logger> logger;
@@ -36,7 +36,7 @@ namespace com {
             public:
                 bool console_enabled;
 
-                ~_log() {
+                ~__log() {
                     spd::drop_all();
                 }
 

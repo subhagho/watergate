@@ -13,7 +13,7 @@
 namespace com {
     namespace watergate {
         namespace common {
-            class _app {
+            class __app {
             private:
                 string name;
                 string id;
@@ -22,7 +22,7 @@ namespace com {
                 time_t start_time;
 
             public:
-                _app(string name) {
+                __app(string name) {
                     this->name = name;
                     this->start_time = time(nullptr);
                     this->id = common_utils::uuid();

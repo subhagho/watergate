@@ -7,7 +7,7 @@
 
 TEST_CASE("Test time function.", "[com::watergate::common::timer]") {
     init_utils::create_env(CONFIG_FILE);
-    const _env *env = init_utils::get_env();
+    const __env *env = init_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
     const Config *config = init_utils::get_config();
@@ -27,7 +27,7 @@ TEST_CASE("Test time function.", "[com::watergate::common::timer]") {
 
 TEST_CASE("Test alarm with callback.", "[com::watergate::common::alarm]") {
     init_utils::create_env(CONFIG_FILE);
-    const _env *env = init_utils::get_env();
+    const __env *env = init_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
     const Config *config = init_utils::get_config();

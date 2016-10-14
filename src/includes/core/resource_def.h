@@ -20,7 +20,7 @@ namespace com {
     namespace watergate {
         namespace core {
             enum resource_type_enum {
-                UNKNOWN = 0, IO, NET
+                UNKNOWN = 0, IO, NET, FS
             };
 
             class resource_def {
@@ -43,6 +43,8 @@ namespace com {
                 virtual int get_control_size() = 0;
 
                 virtual const string *get_resource_name() = 0;
+
+                virtual bool accept(const string name) = 0;
 
                 long get_lease_time() {
                     return lease_time;

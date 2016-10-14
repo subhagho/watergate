@@ -13,7 +13,7 @@
 #include <thread>
 #include <mutex>
 
-#include "includes/common/_app.h"
+#include "includes/common/__app.h"
 #include "includes/common/timer.h"
 #include "includes/common/config.h"
 #include "includes/common/log_utils.h"
@@ -56,7 +56,7 @@ namespace com {
                 exclusive_lock *lock = nullptr;
 
             protected:
-                _state state;
+                __state__ state;
 
                 void create(string name, resource_def *resource, bool server);
 
@@ -92,7 +92,7 @@ namespace com {
                     return this->name;
                 }
 
-                const _state get_state() const {
+                const __state__ get_state() const {
                     return state;
                 }
 
@@ -242,7 +242,7 @@ namespace com {
 
                 }
 
-                void init(const _app *app, string name, resource_def *resrouce) {
+                void init(const __app *app, string name, resource_def *resrouce) {
                     if (NOT_NULL(lock_record)) {
                         pid_t pid = getpid();
                         if (lock_record->app.proc_id != pid) {

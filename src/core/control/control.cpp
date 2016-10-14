@@ -10,7 +10,7 @@
 
 using namespace com::watergate::core;
 
-void com::watergate::core::_semaphore::create(const _app *app, const ConfigValue *config, bool server) {
+void com::watergate::core::_semaphore::create(const __app *app, const ConfigValue *config, bool server) {
     CHECK_NOT_NULL(app);
     CHECK_NOT_NULL(config);
 

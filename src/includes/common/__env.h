@@ -10,7 +10,7 @@
 #include "config.h"
 #include "includes/core/control_def.h"
 #include "file_utils.h"
-#include "_app.h"
+#include "__app.h"
 #include "log_utils.h"
 #include "metrics.h"
 
@@ -33,17 +33,17 @@
 namespace com {
     namespace watergate {
         namespace common {
-            class _env {
+            class __env {
             private:
-                _state state;
+                __state__ state;
                 Config *config;
-                _app *app;
+                __app *app;
 
                 Path *work_dir;
                 Path *temp_dir;
 
                 void setup_defaults() {
-                    this->app = new _app(CONST_CONFIG_ENV_PARAM_APPNAME);
+                    this->app = new __app(CONST_CONFIG_ENV_PARAM_APPNAME);
 
                     this->work_dir = new Path(CONST_DEFAULT_DIR);
                     string appdir = this->app->get_app_directory();
@@ -68,7 +68,7 @@ namespace com {
                 }
 
             public:
-                ~_env();
+                ~__env();
 
                 void create(string filename) {
                     create(filename, EMPTY_STRING);
@@ -76,7 +76,7 @@ namespace com {
 
                 void create(string filename, string app_name);
 
-                const _state get_state() const {
+                const __state__ get_state() const {
                     return state;
                 }
 
@@ -90,7 +90,7 @@ namespace com {
 
                 const Path *get_temp_dir() const;
 
-                const _app *get_app() const {
+                const __app *get_app() const {
                     return app;
                 }
 

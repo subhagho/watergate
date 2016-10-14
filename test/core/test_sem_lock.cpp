@@ -13,7 +13,7 @@ using namespace com::watergate::common;
 
 TEST_CASE("Basic control setup", "[com::watergate::core::control_def]") {
     init_utils::create_env(CONFIG_FILE);
-    const _env *env = init_utils::get_env();
+    const __env *env = init_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
     const Config *config = init_utils::get_config();
@@ -24,7 +24,7 @@ TEST_CASE("Basic control setup", "[com::watergate::core::control_def]") {
     control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
     REQUIRE(NOT_NULL(manager));
 
-    control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
+    const control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
     REQUIRE(NOT_NULL(control));
 
     CHECK_AND_FREE(manager);
@@ -35,7 +35,7 @@ TEST_CASE("Basic control setup", "[com::watergate::core::control_def]") {
 TEST_CASE("Basic lock operations", "[com::watergate::core::control_def]") {
     try {
         init_utils::create_env(CONFIG_FILE);
-        const _env *env = init_utils::get_env();
+        const __env *env = init_utils::get_env();
         REQUIRE(NOT_NULL(env));
 
         const Config *config = init_utils::get_config();
@@ -46,7 +46,7 @@ TEST_CASE("Basic lock operations", "[com::watergate::core::control_def]") {
         REQUIRE(NOT_NULL(manager));
 
         LOG_DEBUG("Creating Control Client...");
-        control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
+        const control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
         REQUIRE(NOT_NULL(control));
 
         thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);
@@ -92,7 +92,7 @@ TEST_CASE("Basic lock operations", "[com::watergate::core::control_def]") {
 
 TEST_CASE("Fail lock operations", "[com::watergate::core::control_def]") {
     init_utils::create_env(CONFIG_FILE);
-    const _env *env = init_utils::get_env();
+    const __env *env = init_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
     const Config *config = init_utils::get_config();
@@ -106,7 +106,7 @@ TEST_CASE("Fail lock operations", "[com::watergate::core::control_def]") {
     REQUIRE(NOT_NULL(manager));
 
     LOG_DEBUG("Creating Control Client...");
-    control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
+    const control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
     REQUIRE(NOT_NULL(control));
 
     thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);
@@ -144,7 +144,7 @@ TEST_CASE("Fail lock operations", "[com::watergate::core::control_def]") {
 
 TEST_CASE("Test lock timeout operations", "[com::watergate::core::control_def]") {
     init_utils::create_env(CONFIG_FILE);
-    const _env *env = init_utils::get_env();
+    const __env *env = init_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
     const Config *config = init_utils::get_config();
@@ -158,7 +158,7 @@ TEST_CASE("Test lock timeout operations", "[com::watergate::core::control_def]")
     REQUIRE(NOT_NULL(manager));
 
     LOG_DEBUG("Creating Control Client...");
-    control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
+    const control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
     REQUIRE(NOT_NULL(control));
 
     thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);
@@ -203,7 +203,7 @@ TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]"
         perror("getcwd() error");
 
     init_utils::create_env(CONFIG_FILE);
-    const _env *env = init_utils::get_env();
+    const __env *env = init_utils::get_env();
     REQUIRE(NOT_NULL(env));
 
     const Config *config = init_utils::get_config();

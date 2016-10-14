@@ -12,7 +12,7 @@
 
 #include "common.h"
 #include "common_utils.h"
-#include "_state.h"
+#include "__state__.h"
 #include "base_error.h"
 
 #define CONST_CONFIG_ERROR_PREFIX "Configuration Error : "
@@ -567,7 +567,7 @@ namespace com {
 
             class Config {
             private:
-                _state state;
+                __state__ state;
                 ConfigValue *config;
 
                 ConfigValue *process_node(Json json);

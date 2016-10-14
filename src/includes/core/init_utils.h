@@ -5,7 +5,7 @@
 #ifndef WATERGATE_INIT_UTILS_H
 #define WATERGATE_INIT_UTILS_H
 
-#include "includes/common/_env.h"
+#include "includes/common/__env.h"
 #include "includes/core/control_def.h"
 #include "includes/core/control_manager.h"
 
@@ -18,10 +18,10 @@ namespace com {
             class init_utils {
             private:
                 static control_client *client;
-                static _env *env;
+                static __env *env;
 
             public:
-                static control_manager *init_control_manager(const _env *env, const string path) {
+                static control_manager *init_control_manager(const __env *env, const string path) {
                     CHECK_NOT_NULL(env);
                     CHECK_NOT_EMPTY(path);
 
@@ -37,7 +37,7 @@ namespace com {
                     return manager;
                 }
 
-                static control_client *init_control_client(const _env *env, const string path) {
+                static const control_client *init_control_client(const __env *env, const string path) {
                     CHECK_NOT_NULL(env);
                     CHECK_NOT_EMPTY(path);
 
@@ -55,7 +55,7 @@ namespace com {
                     return control;
                 }
 
-                static control_client *get_client() {
+                static const control_client *get_client() {
                     CHECK_NOT_NULL(client);
                     CHECK_STATE_AVAILABLE(client->get_state());
                     return client;
@@ -69,12 +69,18 @@ namespace com {
                 }
 
                 static void create_env(const string configfile) {
-                    env = new _env();
+                    env = new __env();
                     env->create(configfile);
                     CHECK_ENV_STATE(env);
                 }
 
-                static const _env *get_env() {
+                static void create_env(const string configfile, const string appname) {
+                    env = new __env();
+                    env->create(configfile, appname);
+                    CHECK_ENV_STATE(env);
+                }
+
+                static const __env *get_env() {
                     CHECK_NOT_NULL(env);
                     CHECK_ENV_STATE(env);
 
@@ -82,13 +88,15 @@ namespace com {
                 }
 
                 static const Config *get_config() {
-                    const _env *e = get_env();
+                    const __env *e = get_env();
 
                     return e->get_config();
                 }
 
                 static void dispose() {
+                    LOG_DEBUG("[pid=%d] Releasing control client...", getpid());
                     CHECK_AND_FREE(client);
+                    LOG_DEBUG("[pid=%d] Releasing environment handle...", getpid());
                     CHECK_AND_FREE(env);
 
                     client = nullptr;

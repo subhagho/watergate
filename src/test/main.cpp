@@ -6,7 +6,7 @@
 #include <thread>
 
 #include "includes/common/common.h"
-#include "includes/common/_env.h"
+#include "includes/common/__env.h"
 #include "includes/core/control_manager.h"
 #include "core/control/dummy_resource.h"
 #include "includes/core/init_utils.h"
@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
     try {
 
         init_utils::create_env(getenv("CONFIG_FILE_PATH"));
-        const _env *env = init_utils::get_env();
+        const __env *env = init_utils::get_env();
         REQUIRE(NOT_NULL(env));
 
         const Config *config = init_utils::get_config();
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
         control_manager *manager = init_utils::init_control_manager(env, CONTROL_CONFIG_PATH);
         REQUIRE(NOT_NULL(manager));
 
-        control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
+        const control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
         REQUIRE(NOT_NULL(control));
 
         thread_lock_ptr *tptr = control->register_thread(CONTROL_NAME);

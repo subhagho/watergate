@@ -25,17 +25,17 @@
 namespace com {
     namespace watergate {
         namespace common {
-            enum state_enum {
+            enum __state_enum {
                 Unknown, Initialized, Available, Disposed, Exception
             };
 
-            class _state {
+            class __state__ {
             private:
-                state_enum state = Unknown;
+                __state_enum state = Unknown;
                 const exception *error = NULL;
 
             public:
-                const state_enum get_state() const {
+                const __state_enum get_state() const {
                     return state;
                 }
 
@@ -56,7 +56,7 @@ namespace com {
                     }
                 }
 
-                void set_state(state_enum s) {
+                void set_state(__state_enum s) {
                     state = s;
                 }
 

@@ -36,7 +36,7 @@ void com::watergate::core::control_manager::run(control_manager *owner) {
     }
 }
 
-void com::watergate::core::control_manager::init(const _app *app, const ConfigValue *config) {
+void com::watergate::core::control_manager::init(const __app *app, const ConfigValue *config) {
     CHECK_NOT_NULL(config);
 
     const ConfigValue *dn = config->find(CONFIG_DEF_NODE_PATH);

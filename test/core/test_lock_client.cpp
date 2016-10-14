@@ -13,11 +13,14 @@
 void com::watergate::tests::common::basic_lock_client::setup() {
     pid_t pid = getpid();
 
-    const Config *config = env->get_config();
-    CHECK_NOT_NULL(config);
+    const __env *env = init_utils::get_env();
+    REQUIRE(NOT_NULL(env));
+
+    const Config *config = init_utils::get_config();
+    REQUIRE(NOT_NULL(config));
 
     LOG_DEBUG("[pid=%d] Creating Control Client...", pid);
-    control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
+    const control_client *control = init_utils::init_control_client(env, CONTROL_DEF_CONFIG_PATH);
     REQUIRE(NOT_NULL(control));
 
     CHECK_STATE_AVAILABLE(control->get_state());
@@ -51,6 +54,8 @@ void com::watergate::tests::common::basic_lock_client::run() {
     try {
         pid_t pid = getpid();
         LOG_INFO("[pid=%d] Running lock control client. ", pid);
+
+        const control_client *control = init_utils::get_client();
         CHECK_NOT_NULL(control);
 
         thread_lock_ptr *tptr = control->register_thread(FS_CONTROL_NAME);
@@ -136,8 +141,8 @@ int main(int argc, char *argv[]) {
             index = atoi(i.arg);
             if (!IS_EMPTY(configf) && index >= 0) {
                 string pname = com::watergate::common::common_utils::format("basic_lock_client.%d", index);
-                init_utils::create_env(CONFIG_FILE);
-                const _env *env = init_utils::get_env();
+                init_utils::create_env(CONFIG_FILE, pname);
+                const __env *env = init_utils::get_env();
                 REQUIRE(NOT_NULL(env));
 
                 const Config *config = init_utils::get_config();
@@ -149,7 +154,7 @@ int main(int argc, char *argv[]) {
             option::printUsage(std::cout, usage);
             return -1;
         }
-        const _env *env = init_utils::get_env();
+        const __env *env = init_utils::get_env();
 
         int priority = -1;
         o = options[PRIORITY];
@@ -165,13 +170,14 @@ int main(int argc, char *argv[]) {
         if (priority < 0)
             throw BASE_ERROR("Invalid priority specified. [priority=%d]", priority);
 
-        com::watergate::tests::common::basic_lock_client *client = new com::watergate::tests::common::basic_lock_client(
-                env, priority);
+        com::watergate::tests::common::basic_lock_client *client = new com::watergate::tests::common::basic_lock_client();
         client->setup();
         client->run();
-        CHECK_AND_FREE(client);
 
+        CHECK_AND_FREE(client);
+        LOG_DEBUG("[pid=%d][index=%d] Released run client handle...", getpid(), index);
         init_utils::dispose();
+        LOG_DEBUG("[pid=%d][index=%d] Disposed runtime environment...", getpid(), index);
 
         LOG_DEBUG("[pid=%d][index=%d] Exiting run...", getpid(), index);
         exit(0);

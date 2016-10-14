@@ -48,7 +48,7 @@ namespace com {
                     join();
                 }
 
-                void init(const _app *app, const ConfigValue *config) override;
+                void init(const __app *app, const ConfigValue *config) override;
 
                 void clear_locks() {
                     if (!IS_EMPTY(semaphores)) {

@@ -7,7 +7,7 @@
 
 #include <unistd.h>
 
-#include "includes/common/_env.h"
+#include "includes/common/__env.h"
 #include "includes/core/control_def.h"
 #include "includes/core/init_utils.h"
 
@@ -36,21 +36,11 @@ namespace com {
             namespace common {
                 class basic_lock_client {
                 private:
-                    const _env *env;
-                    control_client *control;
                     int priority;
                     long sleep_timeout;
                     int lock_tries;
 
                 public:
-                    basic_lock_client(const _env *env, int priority) {
-                        this->env = env;
-                        this->priority = priority;
-                    }
-
-                    ~basic_lock_client() {
-                        CHECK_AND_FREE(control);
-                    }
 
                     void setup();
 
