@@ -9,7 +9,6 @@ import com.watergate.library.ObjectState.StateException;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 /**
@@ -75,12 +74,54 @@ public class PriorityFileInputStream extends FileInputStream {
 
 	@Override
 	public int read(byte[] b) throws IOException {
-		return super.read(b);
+		try {
+			if (lockname != null && !lockname.isEmpty()) {
+				int quota = (int) lockClient.getQuota(lockname);
+				int read = 0;
+
+				while (read < b.length) {
+					int rem = b.length - read;
+					if (rem > quota) {
+						rem = quota;
+					}
+					int r = readBlock(b, read, rem);
+					if (r < rem)
+						break;
+					read += r;
+				}
+				return read;
+			} else {
+				return super.read(b);
+			}
+		} catch (Throwable t) {
+			throw new IOException(t);
+		}
 	}
 
 	@Override
 	public int read(byte[] b, int off, int len) throws IOException {
-		return super.read(b, off, len);
+		try {
+			if (lockname != null && !lockname.isEmpty()) {
+				int quota = (int) lockClient.getQuota(lockname);
+				int read = 0;
+
+				while (read < len) {
+					int rem = len - read;
+					if (rem > quota) {
+						rem = quota;
+					}
+					int r = readBlock(b, (off + read), rem);
+					if (r < rem)
+						break;
+					read += r;
+				}
+				return read;
+			} else {
+				return super.read(b, off, len);
+			}
+		} catch (Throwable t) {
+			throw new IOException(t);
+		}
 	}
 
 	private int readBlock(byte[] b, int off, int len) throws IOException, LockControlException {
