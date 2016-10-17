@@ -136,7 +136,6 @@ namespace com {
                         if (ret != QuotaReached) {
                             break;
                         }
-                        LOG_DEBUG("Quota reached. [name=%s]", name.c_str());
                         if (!a.start()) {
                             ret = Error;
                             break;

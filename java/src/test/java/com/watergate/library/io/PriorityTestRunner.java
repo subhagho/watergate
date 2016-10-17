@@ -1,6 +1,8 @@
 package com.watergate.library.io;
 
+import com.watergate.library.LockClientEnv;
 import com.watergate.library.utils.LogUtils;
+import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,15 +19,35 @@ public class PriorityTestRunner implements Runnable {
 	private static final Logger _log = LoggerFactory.getLogger
 			(PriorityTestRunner.class);
 	private static final String DATA_FILE = "../test/data/fs-data.txt";
+	private static final String CONFIG_FILE =
+			"../test/data/test-sem-conf.json";
+	private static final String CONTROL_DEF_CONFIG_PATH =
+			"/configuration/control/def";
 
+	@Option(name = "priority", required = true, aliases = {"p"})
 	private short priority;
+	@Option(name = "index", required = true, aliases = {"i"})
 	private int index;
+	@Option(name = "cycles", required = true, aliases = {"c"})
 	private int cycles;
 
 	public PriorityTestRunner(short priority, int index, int cycles) {
 		this.priority = priority;
 		this.index = index;
 		this.cycles = cycles;
+	}
+
+	public PriorityTestRunner() {
+	}
+
+	private void init() throws Exception {
+		LockClientEnv.createEnv(CONFIG_FILE, "Test_PriorityFileInputStream",
+				CONTROL_DEF_CONFIG_PATH);
+
+	}
+
+	private void dispose() throws Exception {
+		LockClientEnv.shutdown();
 	}
 
 	@Override
@@ -98,7 +120,18 @@ public class PriorityTestRunner implements Runnable {
 					index, priority, write_time, read_time));
 		} catch (Throwable t) {
 			LogUtils.stacktrace(getClass(), t, _log);
-			LogUtils.error(getClass(), t, _log);
+			LogUtils.error(getClass(), String.format
+							("[index=%d][priority=%d] error : %s", index, priority, t.getLocalizedMessage()),
+					_log);
+		}
+	}
+
+	public static void main(String[] args) {
+		try {
+
+			LockClientEnv.getLockClient().test_assert();
+		} catch (Throwable t) {
+			t.printStackTrace();
 		}
 	}
 }

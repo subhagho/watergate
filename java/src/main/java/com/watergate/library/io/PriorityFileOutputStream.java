@@ -16,6 +16,7 @@ public class PriorityFileOutputStream extends FileOutputStream {
 	private LockControlClient lockClient;
 	private short priority;
 	private String lockname = null;
+	private int currentLockCount = 0;
 
 	public PriorityFileOutputStream(String name, short priority) throws
 			LockControlException, StateException, IOException {
@@ -87,23 +88,30 @@ public class PriorityFileOutputStream extends FileOutputStream {
 	public void write(byte[] b) throws IOException {
 		if (lockname != null && !lockname.isEmpty()) {
 			try {
-				double quota = lockClient.getQuota(lockname);
-				if (b.length <= quota) {
-					writeBlock(b, 0, b.length);
-				} else {
-					double rem = 0;
-					double written = 0;
-					while (written < b.length) {
-						rem = b.length - written;
-						if (rem > 0) {
-							if (rem > quota) {
-								rem = quota;
+				currentLockCount = 0;
+				try {
+					double quota = lockClient.getQuota(lockname);
+					if (b.length <= quota) {
+						writeBlock(b, 0, b.length);
+					} else {
+						double rem = 0;
+						double written = 0;
+						while (written < b.length) {
+							rem = b.length - written;
+							if (rem > 0) {
+								if (rem > quota) {
+									rem = quota;
+								}
+								writeBlock(b, (int) written, (int) rem);
+								written += rem;
+							} else {
+								break;
 							}
-							writeBlock(b, (int) written, (int) rem);
-							written += rem;
-						} else {
-							break;
 						}
+					}
+				} finally {
+					for (int ii = 0; ii < currentLockCount; ii++) {
+						lockClient.release(lockname, priority);
 					}
 				}
 			} catch (Throwable t) {
@@ -118,23 +126,30 @@ public class PriorityFileOutputStream extends FileOutputStream {
 	public void write(byte[] b, int off, int len) throws IOException {
 		if (lockname != null && !lockname.isEmpty()) {
 			try {
-				double quota = lockClient.getQuota(lockname);
-				if (len <= quota) {
-					writeBlock(b, off, len);
-				} else {
-					double rem = 0;
-					double written = 0;
-					while (written < len) {
-						rem = len - written;
-						if (rem > 0) {
-							if (rem > quota) {
-								rem = quota;
+				currentLockCount = 0;
+				try {
+					double quota = lockClient.getQuota(lockname);
+					if (len <= quota) {
+						writeBlock(b, off, len);
+					} else {
+						double rem = 0;
+						double written = 0;
+						while (written < len) {
+							rem = len - written;
+							if (rem > 0) {
+								if (rem > quota) {
+									rem = quota;
+								}
+								writeBlock(b, (off + (int) written), (int) rem);
+								written += rem;
+							} else {
+								break;
 							}
-							writeBlock(b, (off + (int) written), (int) rem);
-							written += rem;
-						} else {
-							break;
 						}
+					}
+				} finally {
+					for (int ii = 0; ii < currentLockCount; ii++) {
+						lockClient.release(lockname, priority);
 					}
 				}
 			} catch (Throwable t) {
@@ -149,11 +164,8 @@ public class PriorityFileOutputStream extends FileOutputStream {
 		try {
 			ELockResult r = lockClient.getLock(lockname, priority, len);
 			if (r == ELockResult.Locked) {
-				try {
-					super.write(b, off, len);
-				} finally {
-					lockClient.release(lockname, priority);
-				}
+				currentLockCount++;
+				super.write(b, off, len);
 			} else {
 				throw new LockControlException(String.format("Error writing to " +
 						"locked file. [result=%s]", r.name()));

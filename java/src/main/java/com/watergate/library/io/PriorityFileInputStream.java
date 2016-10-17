@@ -18,6 +18,7 @@ public class PriorityFileInputStream extends FileInputStream {
 	private LockControlClient lockClient;
 	private short priority;
 	private String lockname = null;
+	private int currentLockCount = 0;
 
 	public PriorityFileInputStream(String name, short priority) throws
 			LockControlException, StateException, IOException {
@@ -76,20 +77,27 @@ public class PriorityFileInputStream extends FileInputStream {
 	public int read(byte[] b) throws IOException {
 		try {
 			if (lockname != null && !lockname.isEmpty()) {
-				int quota = (int) lockClient.getQuota(lockname);
-				int read = 0;
-
-				while (read < b.length) {
-					int rem = b.length - read;
-					if (rem > quota) {
-						rem = quota;
+				currentLockCount = 0;
+				try {
+					int quota = (int) lockClient.getQuota(lockname);
+					int read = 0;
+					while (read < b.length) {
+						int rem = b.length - read;
+						if (rem > quota) {
+							rem = quota;
+						}
+						int r = readBlock(b, read, rem);
+						if (r < rem)
+							break;
+						read += r;
 					}
-					int r = readBlock(b, read, rem);
-					if (r < rem)
-						break;
-					read += r;
+					return read;
+				} finally {
+					for (int ii = 0; ii < currentLockCount; ii++) {
+						lockClient.release(lockname, priority);
+					}
 				}
-				return read;
+
 			} else {
 				return super.read(b);
 			}
@@ -102,20 +110,27 @@ public class PriorityFileInputStream extends FileInputStream {
 	public int read(byte[] b, int off, int len) throws IOException {
 		try {
 			if (lockname != null && !lockname.isEmpty()) {
-				int quota = (int) lockClient.getQuota(lockname);
-				int read = 0;
+				currentLockCount = 0;
+				try {
+					int quota = (int) lockClient.getQuota(lockname);
+					int read = 0;
 
-				while (read < len) {
-					int rem = len - read;
-					if (rem > quota) {
-						rem = quota;
+					while (read < len) {
+						int rem = len - read;
+						if (rem > quota) {
+							rem = quota;
+						}
+						int r = readBlock(b, (off + read), rem);
+						if (r < rem)
+							break;
+						read += r;
 					}
-					int r = readBlock(b, (off + read), rem);
-					if (r < rem)
-						break;
-					read += r;
+					return read;
+				} finally {
+					for (int ii = 0; ii < currentLockCount; ii++) {
+						lockClient.release(lockname, priority);
+					}
 				}
-				return read;
 			} else {
 				return super.read(b, off, len);
 			}
@@ -127,11 +142,8 @@ public class PriorityFileInputStream extends FileInputStream {
 	private int readBlock(byte[] b, int off, int len) throws IOException, LockControlException {
 		ELockResult r = lockClient.getLock(lockname, priority, len);
 		if (r == ELockResult.Locked) {
-			try {
-				return super.read(b, off, len);
-			} finally {
-				lockClient.release(lockname, priority);
-			}
+			currentLockCount++;
+			return super.read(b, off, len);
 		} else {
 			throw new LockControlException(String.format("Error " +
 					"reading " +
