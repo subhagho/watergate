@@ -56,6 +56,23 @@ namespace com {
                     }
                 }
 
+                int get_state_int() const {
+                    switch (state) {
+                        case Unknown:
+                            return 0;
+                        case Initialized:
+                            return 1;
+                        case Available:
+                            return 2;
+                        case Disposed:
+                            return 3;
+                        case Exception:
+                            return 4;
+                        default:
+                            return 0;
+                    }
+                }
+
                 void set_state(__state_enum s) {
                     state = s;
                 }

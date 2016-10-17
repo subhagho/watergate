@@ -31,6 +31,11 @@
 .idea/
 /**/.vscode/
 *.swp
+*.iml
+
+# Java
+/**/target/
+*.class
 
 /**/cmake/
 build/

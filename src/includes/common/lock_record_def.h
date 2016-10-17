@@ -86,7 +86,14 @@ namespace com {
         namespace core {
 
             enum lock_acquire_enum {
-                Locked = 0, Expired, Retry, Timeout, QuotaReached, QuotaAvailable, Error, None
+                Locked = 0,
+                Expired = 1,
+                Retry = 2,
+                Timeout = 3,
+                QuotaReached = 4,
+                QuotaAvailable = 5,
+                Error = 6,
+                None = 7
             };
 
             struct thread_lock_ptr {
@@ -237,6 +244,29 @@ namespace com {
                             return string("TIMEOUT");
                         default:
                             return string("UNKNOWN");
+                    }
+                }
+
+                static int get_lock_acquire_enum_int(lock_acquire_enum value) {
+                    switch (value) {
+                        case lock_acquire_enum::Locked:
+                            return 0;
+                        case lock_acquire_enum::None:
+                            return 7;
+                        case lock_acquire_enum::Error:
+                            return 6;
+                        case lock_acquire_enum::Expired:
+                            return 1;
+                        case lock_acquire_enum::QuotaAvailable:
+                            return 5;
+                        case lock_acquire_enum::QuotaReached:
+                            return 4;
+                        case lock_acquire_enum::Retry:
+                            return 2;
+                        case lock_acquire_enum::Timeout:
+                            return 3;
+                        default:
+                            return 7;
                     }
                 }
 

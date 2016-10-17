@@ -61,6 +61,22 @@ namespace com {
                         return resource_type_enum::IO;
                     } else if (value == "NET") {
                         return resource_type_enum::NET;
+                    } else if (value == "FS") {
+                        return resource_type_enum::FS;
+                    }
+                    return resource_type_enum::UNKNOWN;
+                }
+
+                static resource_type_enum parse_type(int value) {
+                    switch (value) {
+                        case 0:
+                            return resource_type_enum::UNKNOWN;
+                        case 1:
+                            return resource_type_enum::IO;
+                        case 2:
+                            return resource_type_enum::NET;
+                        case 3:
+                            return resource_type_enum::FS;
                     }
                     return resource_type_enum::UNKNOWN;
                 }

@@ -1,12 +1,12 @@
 //
-// Created by Subhabrata Ghosh on 14/10/16.
+// Created by Subhabrata Ghosh on 16/10/16.
 //
 
-#ifndef WATERGATE_TEST_FS_WRITER_H
-#define WATERGATE_TEST_FS_WRITER_H
-#define CATCH_CONFIG_MAIN
+#ifndef WATERGATE_MAIN_FS_H_H
+#define WATERGATE_MAIN_FS_H_H
 
-#include "../../common/test_common.h"
+#include <fstream>
+
 #include "includes/core/control_def.h"
 #include "includes/core/fs_writer.h"
 
@@ -17,7 +17,7 @@
 #define TFW_CONFIG_NODE "/configuration/test-fs-writer"
 #define TFW_CONFIG_VALUE_DATAF "data-file"
 
-#define CONTROL_NAME "/tmp"
+#define CONTROL_NAME "/private/tmp"
 
 typedef struct {
     uint64_t timestamp;
@@ -49,4 +49,4 @@ string read_data_file(string filename) {
     return data;
 }
 
-#endif //WATERGATE_TEST_FS_WRITER_H
+#endif //WATERGATE_MAIN_FS_H_H

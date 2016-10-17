@@ -26,11 +26,14 @@ namespace com {
                     FILE *f_ptr = nullptr;
                     string lock_name;
                     uint64_t quota_max = 0;
+                    int16_t priority = 0;
+                    uint64_t timeout = 0;
 
                 public:
-                    __fs_base(const string filename) {
+                    __fs_base(const string filename, int16_t priority) {
                         CHECK_NOT_EMPTY(filename);
                         path = new Path(filename);
+                        this->priority = priority;
                     }
 
                     virtual ~__fs_base() {
@@ -53,6 +56,8 @@ namespace com {
                             base_error e = BASE_ERROR("Error opening file. [path=%s][mode=%s][error=%s]",
                                                       path->get_path().c_str(), mode.c_str(), strerror(errno));
                             state.set_error(&e);
+
+                            throw e;
                         }
 
                         const control_client *client = init_utils::get_client();
@@ -64,6 +69,22 @@ namespace com {
                         quota_max = client->get_quota(lock_name);
 
                         state.set_state(Available);
+                    }
+
+                    void set_priority(int16_t priority) {
+                        this->priority = priority;
+                    }
+
+                    int16_t get_priority() {
+                        return this->priority;
+                    }
+
+                    void set_timeout(uint64_t timeout) {
+                        this->timeout = timeout;
+                    }
+
+                    uint64_t get_timeout() {
+                        return this->timeout;
                     }
 
                     fpos_t get_position() {
@@ -102,6 +123,8 @@ namespace com {
                     }
 
                     long get_file_size() {
+                        CHECK_STATE_AVAILABLE(state);
+
                         if (path->exists()) {
                             struct stat stat_buf;
 

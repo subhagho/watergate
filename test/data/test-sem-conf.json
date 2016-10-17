@@ -27,7 +27,7 @@
             "name": "fs-resource-0",
             "class": "com::watergate::core::io::filesystem_driver",
             "params": {
-              "fs.path.root": "/tmp",
+              "fs.path.root": "/private/tmp",
               "fs.quota.bytes": "5000",
               "fs.quota.lease.time": "500",
               "fs.concurrency.max": "8"
@@ -46,6 +46,9 @@
       "process.count": "30",
       "sleep.time": "30",
       "lock.tries": "100"
+    },
+    "test-fs-writer": {
+      "data-file": "/work/dev/wookler/watergate/test/data/fs-data.txt"
     }
   }
 }

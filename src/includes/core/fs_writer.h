@@ -23,11 +23,15 @@ namespace com {
                 class fs_writer : public __fs_base {
 
                 public:
-                    fs_writer(const string filename) : __fs_base(filename) {
+                    fs_writer(const string filename, int16_t priority) : __fs_base(filename, priority) {
 
                     }
 
-                    size_t write(const void *ptr, size_t size, size_t nitems, int priority, uint64_t timeout);
+                    size_t write(const void *ptr, size_t size, size_t nitems) {
+                        return write(ptr, size, nitems, this->timeout);
+                    }
+
+                    size_t write(const void *ptr, size_t size, size_t nitems, uint64_t timeout);
                 };
             }
         }

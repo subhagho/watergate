@@ -11,25 +11,26 @@ com::watergate::common::Config::~Config() {
 }
 
 void com::watergate::common::Config::create(string filename) {
-    assert(!filename.empty());
+    CHECK_NOT_EMPTY(filename);
 
     try {
         cout << "Opening configuration file. [file=" << filename << "]\n";
         std::ifstream t(filename, std::ifstream::in);
         if (!t.is_open()) {
-            throw CONFIG_ERROR("Error opening configuration file. [file=%s][error=%s]", filename.c_str(), strerror(errno));
+            throw CONFIG_ERROR("Error opening configuration file. [file=%s][error=%s]", filename.c_str(),
+                               strerror(errno));
         }
 
         stringstream ss;
         string line;
-        while(getline(t, line)) {
+        while (getline(t, line)) {
             ss << line;
         }
         t.close();
 
         string data(ss.str());
 
-        assert(!IS_EMPTY(data));
+        CHECK_NOT_EMPTY(data);
 
         string err;
         Json json = Json::parse(data.c_str(), err);
