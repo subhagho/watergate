@@ -67,6 +67,7 @@ public class Test_PriorityFileOutputStream {
 			fos.write(data.toString().getBytes("UTF-8"));
 			fos.close();
 		}
+		LockClientEnv.getLockClient().test_assert();
 	}
 
 }

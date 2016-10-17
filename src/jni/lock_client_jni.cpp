@@ -292,3 +292,23 @@ JNIEXPORT void JNICALL Java_com_watergate_library_LockControlClient_dispose
         (JNIEnv *jniEnv, jobject obj) {
 
 }
+
+JNIEXPORT void JNICALL Java_com_watergate_library_LockControlClient_test_1assert
+        (JNIEnv *jniEnv, jobject obj) {
+    try {
+        const control_client *client = init_utils::get_client();
+        CHECK_NOT_NULL(client);
+
+        client->test_assert();
+
+    } catch (const exception &e) {
+        jclass e_class =
+                jniEnv->FindClass("com/watergate/library/LockControlException");
+        jniEnv->ThrowNew(e_class, e.what());
+    } catch (...) {
+        jclass e_class =
+                jniEnv->FindClass("com/watergate/library/LockControlException");
+        jniEnv->ThrowNew(e_class,
+                         "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_test_1assert]");
+    }
+}

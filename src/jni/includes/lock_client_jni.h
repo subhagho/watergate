@@ -87,6 +87,14 @@ JNIEXPORT jstring JNICALL Java_com_watergate_library_LockControlClient_getContro
 JNIEXPORT void JNICALL Java_com_watergate_library_LockControlClient_dispose
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_watergate_library_LockControlClient
+ * Method:    test_assert
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_watergate_library_LockControlClient_test_1assert
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif

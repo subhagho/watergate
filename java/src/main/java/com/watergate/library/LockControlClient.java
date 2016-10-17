@@ -91,6 +91,8 @@ public class LockControlClient {
 
 	public native void dispose() throws LockControlException;
 
+	public native void test_assert() throws LockControlException;
+
 	private ObjectState state = new ObjectState();
 
 	public ELockResult getLock(String name, int priority, double quota) throws LockControlException {

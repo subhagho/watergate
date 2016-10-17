@@ -348,6 +348,7 @@ namespace com {
                     if (!IS_EMPTY(counts)) {
                         for (int ii = 0; ii < priorities; ii++) {
                             _assert(counts[ii]->count == 0);
+                            LOG_DEBUG("[lock=%s][priority=%d] count=%d", name->c_str(), ii, counts[ii]->count);
                         }
                     }
                 }

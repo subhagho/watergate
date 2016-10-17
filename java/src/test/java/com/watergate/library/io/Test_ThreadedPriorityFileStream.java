@@ -7,17 +7,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-
-import static org.junit.Assert.*;
 
 /**
  * Created by subho on 17/10/16.
  */
-public class Test_PriorityFileInputStream {
+public class Test_ThreadedPriorityFileStream {
 	private static final String CONFIG_FILE =
 			"../test/data/test-sem-conf.json";
 	private static final String CONTROL_DEF_CONFIG_PATH =
@@ -25,6 +23,7 @@ public class Test_PriorityFileInputStream {
 	private static final String CONTROL_CONFIG_PATH = "/configuration/control";
 	private static final String DATA_FILE = "../test/data/fs-data.txt";
 	private static final String OUTPUT_FILE = "/tmp/output.txt";
+	private static final int THREAD_COUNT = 20;
 
 	private LockControlManager manager = null;
 
@@ -37,6 +36,18 @@ public class Test_PriorityFileInputStream {
 
 		LockClientEnv.createEnv(CONTROL_DEF_CONFIG_PATH);
 
+		String indir = String.format("/tmp/%s/input/", PriorityTestRunner
+				.class.getSimpleName());
+		File id = new File(indir);
+		if (!id.exists()) {
+			id.mkdirs();
+		}
+		String outdir = String.format("/tmp/%s/output/", PriorityTestRunner
+				.class.getSimpleName());
+		File od = new File(outdir);
+		if (!od.exists()) {
+			od.mkdirs();
+		}
 	}
 
 	@After
@@ -47,27 +58,17 @@ public class Test_PriorityFileInputStream {
 	}
 
 	@Test
-	public void read() throws Exception {
-		Files.copy(Paths.get(DATA_FILE), Paths.get(OUTPUT_FILE),
-				StandardCopyOption.REPLACE_EXISTING);
-		PriorityFileInputStream pis = new PriorityFileInputStream
-				(OUTPUT_FILE, (short) 1);
-		StringBuffer read = new StringBuffer();
-		while (true) {
-			byte[] buff = new byte[10024];
-			int r = pis.read(buff);
-			if (r > 0) {
-				String s = new String(buff, 0, r, "UTF-8");
-				read.append(s);
-				if (r < 1024) {
-					break;
-				}
-			} else {
-				break;
-			}
+	public void run() throws Exception {
+		Thread[] threads = new Thread[THREAD_COUNT];
+		for (int ii = 0; ii < THREAD_COUNT; ii++) {
+			Thread t = new Thread(new PriorityTestRunner((short) (ii % 3), ii,
+					20));
+			t.start();
+			threads[ii] = t;
 		}
-		pis.close();
-
+		for (int ii = 0; ii < THREAD_COUNT; ii++) {
+			threads[ii].join();
+		}
 		LockClientEnv.getLockClient().test_assert();
 	}
 
