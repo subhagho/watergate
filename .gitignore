@@ -28,7 +28,7 @@
 *.out
 *.app
 
-.idea/
+/**/.idea/
 /**/.vscode/
 *.swp
 *.iml

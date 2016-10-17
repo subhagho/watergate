@@ -12,18 +12,16 @@ extern "C" {
  * Method:    create
  * Signature: (Ljava/lang/String;Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL
-Java_com_watergate_library_LockEnv_create
-(JNIEnv * , jobject , jstring , jstring ) ;
+JNIEXPORT void JNICALL Java_com_watergate_library_LockEnv_create
+  (JNIEnv *, jobject, jstring, jstring);
 
 /*
  * Class:     com_watergate_library_LockEnv
  * Method:    dispose
  * Signature: ()V
  */
-JNIEXPORT void JNICALL
-Java_com_watergate_library_LockEnv_dispose
-(JNIEnv * , jobject ) ;
+JNIEXPORT void JNICALL Java_com_watergate_library_LockEnv_dispose
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

@@ -4,10 +4,4 @@
 #ifndef _Callbacks_com_watergate_library_LockControlManager
 #define _Callbacks_com_watergate_library_LockControlManager
 
-/*   public native void create(java.lang.String); */
-#define CREATE_NAME "create"
-/*   public native void clearLocks(); */
-#define CLEAR_LOCKS_NAME "clearLocks"
-/*   public native void dispose(); */
-#define DISPOSE_NAME "dispose"
 #endif //_Callbacks_com_watergate_library_LockControlManager

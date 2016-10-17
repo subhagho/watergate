@@ -26,11 +26,11 @@ JNIEXPORT void JNICALL Java_com_watergate_library_LockControlClient_create
         jniEnv->ReleaseStringUTFChars(configpath, c_fname);
     } catch (const exception &e) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class, e.what());
     } catch (...) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class,
                          "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_create]");
     }
@@ -58,11 +58,11 @@ JNIEXPORT jstring JNICALL Java_com_watergate_library_LockControlClient_findLockB
         return retval;
     } catch (const exception &e) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class, e.what());
     } catch (...) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class,
                          "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_findLockByName]");
     }
@@ -87,11 +87,11 @@ JNIEXPORT jdouble JNICALL Java_com_watergate_library_LockControlClient_getQuota
         return retval;
     } catch (const exception &e) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class, e.what());
     } catch (...) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class,
                          "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_findLockByName]");
     }
@@ -127,11 +127,11 @@ JNIEXPORT jint JNICALL Java_com_watergate_library_LockControlClient_lock__Ljava_
         return retval;
     } catch (const exception &e) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class, e.what());
     } catch (...) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class,
                          "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_lock__Ljava_lang_String_2ID]");
     }
@@ -167,11 +167,11 @@ JNIEXPORT jint JNICALL Java_com_watergate_library_LockControlClient_lock__Ljava_
         return retval;
     } catch (const exception &e) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class, e.what());
     } catch (...) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class,
                          "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_lock__Ljava_lang_String_2IDJ]");
     }
@@ -194,11 +194,11 @@ JNIEXPORT void JNICALL Java_com_watergate_library_LockControlClient_register_1th
         jniEnv->ReleaseStringUTFChars(name, c_name);
     } catch (const exception &e) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class, e.what());
     } catch (...) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class,
                          "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_register_1thread]");
     }
@@ -222,11 +222,11 @@ JNIEXPORT jboolean JNICALL Java_com_watergate_library_LockControlClient_release
         return r;
     } catch (const exception &e) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class, e.what());
     } catch (...) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class,
                          "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_release]");
     }
@@ -246,11 +246,11 @@ JNIEXPORT jint JNICALL Java_com_watergate_library_LockControlClient_getControlSt
         return r;
     } catch (const exception &e) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class, e.what());
     } catch (...) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class,
                          "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_getControlState]");
     }
@@ -277,13 +277,18 @@ JNIEXPORT jstring JNICALL Java_com_watergate_library_LockControlClient_getContro
         return r;
     } catch (const exception &e) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class, e.what());
     } catch (...) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class,
                          "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_getControlState]");
     }
     return nullptr;
+}
+
+JNIEXPORT void JNICALL Java_com_watergate_library_LockControlClient_dispose
+        (JNIEnv *jniEnv, jobject obj) {
+
 }

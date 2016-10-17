@@ -79,6 +79,14 @@ JNIEXPORT jint JNICALL Java_com_watergate_library_LockControlClient_getControlSt
 JNIEXPORT jstring JNICALL Java_com_watergate_library_LockControlClient_getControlError
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_watergate_library_LockControlClient
+ * Method:    dispose
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_watergate_library_LockControlClient_dispose
+  (JNIEnv *, jobject);
+
 #ifdef __cplusplus
 }
 #endif

@@ -70,39 +70,41 @@ public class LockControlClient {
 		}
 	}
 
-	public native void create(String configpath);
+	public native void create(String configpath) throws LockControlException;
 
-	public native String findLockByName(String name, int type);
+	public native String findLockByName(String name, int type) throws LockControlException;
 
-	public native double getQuota(String name);
+	public native double getQuota(String name) throws LockControlException;
 
-	private native int lock(String name, int priority, double quota);
+	private native int lock(String name, int priority, double quota) throws LockControlException;
 
 	private native int lock(String name, int priority, double quota, long
-			timeout);
+			timeout) throws LockControlException;
 
-	public native void register_thread(String lockname);
+	public native void register_thread(String lockname) throws LockControlException;
 
-	public native boolean release(String name, int priority);
+	public native boolean release(String name, int priority) throws LockControlException;
 
-	private native int getControlState();
+	private native int getControlState() throws LockControlException;
 
-	private native String getControlError();
+	private native String getControlError() throws LockControlException;
+
+	public native void dispose() throws LockControlException;
 
 	private ObjectState state = new ObjectState();
 
-	public ELockResult getLock(String name, int priority, double quota) {
+	public ELockResult getLock(String name, int priority, double quota) throws LockControlException {
 		int r = lock(name, priority, quota);
 		return ELockResult.parse(r);
 	}
 
 	public ELockResult getLock(String name, int priority, double quota, long
-			timeout) {
+			timeout) throws LockControlException {
 		int r = lock(name, priority, quota, timeout);
 		return ELockResult.parse(r);
 	}
 
-	public ObjectState getState() {
+	public ObjectState getState() throws LockControlException {
 		int s = getControlState();
 		state.setState(EObjectState.parse(s));
 		if (state.hasError()) {

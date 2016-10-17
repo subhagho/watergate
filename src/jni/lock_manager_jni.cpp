@@ -28,11 +28,11 @@ JNIEXPORT void JNICALL Java_com_watergate_library_LockControlManager_create
         jniEnv->ReleaseStringUTFChars(configpath, c_fname);
     } catch (const exception &e) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class, e.what());
     } catch (...) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class,
                          "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlManager_create]");
     }
@@ -45,11 +45,11 @@ JNIEXPORT void JNICALL Java_com_watergate_library_LockControlManager_clearLocks
         control_manager_inst->clear_locks();
     } catch (const exception &e) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class, e.what());
     } catch (...) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class,
                          "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlManager_clearLocks]");
     }
@@ -63,11 +63,11 @@ JNIEXPORT void JNICALL Java_com_watergate_library_LockControlManager_dispose
         control_manager_inst = nullptr;
     } catch (const exception &e) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class, e.what());
     } catch (...) {
         jclass e_class =
-                jniEnv->FindClass("java/lang/Exception");
+                jniEnv->FindClass("com/watergate/library/LockControlException");
         jniEnv->ThrowNew(e_class,
                          "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlManager_dispose]");
     }

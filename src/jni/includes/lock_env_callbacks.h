@@ -4,8 +4,4 @@
 #ifndef _Callbacks_com_watergate_library_LockEnv
 #define _Callbacks_com_watergate_library_LockEnv
 
-/*   public native void create(java.lang.String, java.lang.String); */
-#define CREATE_NAME "create"
-/*   public native void dispose(); */
-#define DISPOSE_NAME "dispose"
 #endif //_Callbacks_com_watergate_library_LockEnv

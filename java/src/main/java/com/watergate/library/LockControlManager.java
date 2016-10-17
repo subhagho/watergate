@@ -1,5 +1,6 @@
 package com.watergate.library;
 
+
 /**
  * Created by subho on 16/10/16.
  */
@@ -8,9 +9,9 @@ public class LockControlManager {
 		System.loadLibrary("watergate");
 	}
 
-	public native void create(String configpath);
+	public native void create(String configpath) throws LockControlException;
 
-	public native void clearLocks();
+	public native void clearLocks() throws LockControlException;
 
-	public native void dispose();
+	public native void dispose() throws LockControlException;
 }
