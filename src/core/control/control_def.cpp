@@ -138,6 +138,17 @@ bool com::watergate::core::control_client::release_lock(string name, int priorit
         return sem_c->release_lock(priority, base_priority);
 }
 
+bool com::watergate::core::control_client::has_valid_lock(string name, int priority) const {
+    _semaphore *sem = get_lock(name);
+    if (IS_NULL(sem)) {
+        throw CONTROL_ERROR("No registered lock with specified name. [name=%s]", name.c_str());
+    }
+
+    _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
+
+    return sem_c->has_valid_lock(priority);
+}
+
 _lock_state
 com::watergate::core::control_client::lock_get(string name, int priority, double quota, long timeout, int *err) const {
 
@@ -163,7 +174,18 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
                         ret = Timeout;
                         break;
                     }
-
+                    bool error = false;
+                    for (int jj = priority; jj >= locked_priority; jj--) {
+                        if (!has_valid_lock(name, jj)) {
+                            error = true;
+                            break;
+                        }
+                    }
+                    if (error) {
+                        *err = ERR_CORE_CONTROL_TIMEOUT;
+                        ret = Timeout;
+                        break;
+                    }
                     ret = this->try_lock(name, ii, priority, quota);
                     if (ret == Locked || ret == QuotaReached || ret == Error) {
                         if (ret == Locked) {

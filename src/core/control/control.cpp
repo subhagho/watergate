@@ -141,6 +141,11 @@ com::watergate::core::_semaphore_client::try_lock(int priority, double quota, in
     } else if (ls == Expired) {
         LOG_DEBUG("Lock expired. [resetting all semaphores][priority=%d][base priority=%d]", priority, base_priority);
         reset_locks(priority, ls);
+    } else if (ls == ReleaseLock) {
+        LOG_DEBUG("Quota exhausted. [resetting all semaphores][priority=%d][base priority=%d]", BASE_PRIORITY,
+                  base_priority);
+        reset_locks(priority, ls);
+        return QuotaReached;
     } else if (ls == QuotaReached) {
         return ls;
     } else if (ls == ForceReleased) {
@@ -151,7 +156,8 @@ com::watergate::core::_semaphore_client::try_lock(int priority, double quota, in
 
     sem_t *lock = get(priority);
     if (IS_VALID_SEM_PTR(lock)) {
-        LOG_DEBUG("Waiting for semaphore. [name=%s][priority=%d]", this->name->c_str(), priority);
+        LOG_DEBUG("[%s] Waiting for semaphore. [name=%s][priority=%d][base priority=%d]", t_ptr->thread_id.c_str(),
+                  this->name->c_str(), priority, base_priority);
         int r = 0;
         if (wait) {
             r = sem_wait(lock);
@@ -166,13 +172,13 @@ com::watergate::core::_semaphore_client::try_lock(int priority, double quota, in
             t_ptr->priority_lock_index[priority]->acquired_time = time_utils::now();
             client->update_lock(priority);
 
-            LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d][base priority=%d][lock count=%d]",
-                      this->name->c_str(), priority,
+            LOG_DEBUG("[%s] Acquired semaphore. [name=%s][priority=%d][base priority=%d][lock count=%d]",
+                      t_ptr->thread_id.c_str(), this->name->c_str(), priority,
                       base_priority, counts[priority]->count);
 
             return Locked;
         } else {
-            if (!wait) {
+            if (wait) {
                 LOG_DEBUG("Failed to acquire semaphore. [name=%s][priority=%d][base priority=%d][error=%s]",
                           this->name->c_str(), priority, base_priority,
                           strerror(errno));
@@ -250,8 +256,8 @@ _lock_state com::watergate::core::_semaphore_client::try_lock_base(double quota,
             client->update_lock(BASE_PRIORITY);
             client->update_quota(quota, base_priority);
 
-            LOG_DEBUG("Acquired semaphore. [name=%s][priority=%d][base priority=%d][lock count=%d]",
-                      this->name->c_str(),
+            LOG_DEBUG("[%s] Acquired semaphore. [name=%s][priority=%d][base priority=%d][lock count=%d]",
+                      t_ptr->thread_id.c_str(), this->name->c_str(),
                       BASE_PRIORITY, base_priority, counts[BASE_PRIORITY]->count);
 
             return Locked;
@@ -331,6 +337,7 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
         } else {
             LOG_DEBUG("Lock count pending. [priority=%d][base priority=%d][count=%d]", BASE_PRIORITY, base_priority,
                       counts[BASE_PRIORITY]->count);
+            return false;
         }
     } else if (ls == Expired) {
         LOG_DEBUG("Lock expired. [Lock should be retried][priority=%d][base priority=%d]", BASE_PRIORITY,
@@ -409,6 +416,7 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
         } else {
             LOG_DEBUG("Lock count pending. [priority=%d][base priority=%d][count=%d]", priority, base_priority,
                       counts[priority]->count);
+            return false;
         }
     } else if (ls == Expired) {
         LOG_DEBUG("Lock expired. [resetting all semaphores] [priority=%d][base priority=%d]", priority, base_priority);

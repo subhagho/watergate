@@ -19,17 +19,17 @@ public class LockControlClient {
 			switch (state) {
 				case 0:
 					return Locked;
-				case 1:
-					return Expired;
-				case 2:
-					return Retry;
 				case 3:
-					return Timeout;
-				case 4:
-					return QuotaReached;
-				case 5:
-					return QuotaAvailable;
+					return Expired;
+				case 9:
+					return Retry;
 				case 6:
+					return Timeout;
+				case 1:
+					return QuotaReached;
+				case 7:
+					return QuotaAvailable;
+				case 5:
 					return Error;
 				default:
 					return None;

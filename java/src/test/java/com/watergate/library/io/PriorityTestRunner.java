@@ -130,8 +130,9 @@ public class PriorityTestRunner implements Runnable {
 	}
 
 	public static void main(String[] args) {
+		PriorityTestRunner runner = new PriorityTestRunner();
 		try {
-			PriorityTestRunner runner = new PriorityTestRunner();
+			Thread.sleep(2 * 1000);
 			CmdLineParser cp = new CmdLineParser(runner);
 			cp.getProperties().withUsageWidth(120);
 
@@ -148,6 +149,9 @@ public class PriorityTestRunner implements Runnable {
 			LockClientEnv.getLockClient().test_assert();
 			runner.dispose();
 		} catch (Throwable t) {
+			LogUtils.error(PriorityTestRunner.class, String.format
+					("[index=%d][priority=%d] %s", runner.index, runner
+							.priority, t.getLocalizedMessage()));
 			t.printStackTrace();
 			System.exit(-1);
 		}

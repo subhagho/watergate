@@ -306,6 +306,11 @@ namespace com {
                     }
                 }
 
+                bool has_valid_lock(int priority) {
+                    _lock_state state = client->has_valid_lock(priority, 0);
+                    return (state == Locked);
+                }
+
                 _lock_state try_lock(int priority, double quota, int base_priority, bool wait);
 
                 _lock_state try_lock_base(double quota, int base_priority, bool wait);
@@ -347,8 +352,10 @@ namespace com {
                 void test_assert() {
                     if (!IS_EMPTY(counts)) {
                         for (int ii = 0; ii < priorities; ii++) {
-                            _assert(counts[ii]->count == 0);
                             LOG_DEBUG("[lock=%s][priority=%d] count=%d", name->c_str(), ii, counts[ii]->count);
+                        }
+                        for (int ii = 0; ii < priorities; ii++) {
+                            _assert(counts[ii]->count == 0);
                         }
                     }
                 }

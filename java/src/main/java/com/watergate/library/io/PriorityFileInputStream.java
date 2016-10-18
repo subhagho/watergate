@@ -10,6 +10,7 @@ import com.watergate.library.ObjectState.StateException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Created by subho on 17/10/16.
@@ -139,16 +140,18 @@ public class PriorityFileInputStream extends FileInputStream {
 		}
 	}
 
-	private int readBlock(byte[] b, int off, int len) throws IOException, LockControlException {
+	private int readBlock(byte[] b, int off, int len) throws IOException,
+			LockControlException, TimeoutException {
 		ELockResult r = lockClient.getLock(lockname, priority, len);
 		if (r == ELockResult.Locked) {
 			currentLockCount++;
 			return super.read(b, off, len);
+		} else if (r == ELockResult.Timeout) {
+			throw new TimeoutException(String.format("Error " +
+					"reading from locked file. [result=%s]", r.name()));
 		} else {
 			throw new LockControlException(String.format("Error " +
-					"reading " +
-					" from " +
-					"locked file. [result=%s]", r.name()));
+					"reading from locked file. [result=%s]", r.name()));
 		}
 	}
 }

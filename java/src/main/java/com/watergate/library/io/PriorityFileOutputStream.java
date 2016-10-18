@@ -8,6 +8,7 @@ import com.watergate.library.LockControlException;
 import com.watergate.library.ObjectState.StateException;
 
 import java.io.*;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Created by subho on 17/10/16.
@@ -160,18 +161,18 @@ public class PriorityFileOutputStream extends FileOutputStream {
 		}
 	}
 
-	private void writeBlock(byte[] b, int off, int len) throws IOException {
-		try {
-			ELockResult r = lockClient.getLock(lockname, priority, len);
-			if (r == ELockResult.Locked) {
-				currentLockCount++;
-				super.write(b, off, len);
-			} else {
-				throw new LockControlException(String.format("Error writing to " +
-						"locked file. [result=%s]", r.name()));
-			}
-		} catch (Throwable t) {
-			throw new IOException(t);
+	private void writeBlock(byte[] b, int off, int len) throws IOException,
+			LockControlException, TimeoutException {
+		ELockResult r = lockClient.getLock(lockname, priority, len);
+		if (r == ELockResult.Locked) {
+			currentLockCount++;
+			super.write(b, off, len);
+		} else if (r == ELockResult.Timeout) {
+			throw new TimeoutException(String.format("Error writing to " +
+					"locked file. [result=%s]", r.name()));
+		} else {
+			throw new LockControlException(String.format("Error writing to " +
+					"locked file. [result=%s]", r.name()));
 		}
 	}
 }

@@ -77,6 +77,7 @@ namespace com {
 
                 _lock_state lock_get(string name, int priority, double quota, long timeout, int *err) const;
 
+                bool has_valid_lock(string name, int priority) const;
 
             public:
                 ~control_client() override {

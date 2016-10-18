@@ -38,7 +38,7 @@
       ],
       "manager": {
         "lock.reset.time": "5s",
-        "record.reset.time": "30s"
+        "record.reset.time": "300s"
       }
     },
     "test-lock-client": {

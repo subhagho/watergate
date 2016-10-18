@@ -23,7 +23,7 @@ public class Test_ProcessPriorityFileStream {
 			"../cmake/";
 	private static final String TARGET_JAR =
 			"./target/library-1.0-SNAPSHOT-jar-with-dependencies.jar:" +
-					"./target/test-classes";
+					"./target/test-classes:./src/test/resources";
 	private static final String JAVA =
 			"java";
 
@@ -72,7 +72,7 @@ public class Test_ProcessPriorityFileStream {
 			cmd.add(PriorityTestRunner.class.getCanonicalName());
 			cmd.add("--priority=" + priority);
 			cmd.add("--index=" + ii);
-			cmd.add("--cycles=20");
+			cmd.add("--cycles=5");
 
 			LogUtils.mesg(getClass(), "Launching process [" + cmd.toString()
 					+ "]...");
@@ -81,6 +81,7 @@ public class Test_ProcessPriorityFileStream {
 			pb.inheritIO();
 
 			processes[ii] = pb.start();
+
 		}
 
 		for (int ii = 0; ii < processes.length; ii++) {
