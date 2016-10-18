@@ -30,6 +30,19 @@
 
 #define RESET_RECORD(rec) com::watergate::core::record_utils::reset_record(rec)
 
+typedef enum {
+    Locked = 0,
+    QuotaReached = 1,
+    ForceReleased = 2,
+    Expired = 3,
+    None = 4,
+    Error = 5,
+    Timeout = 6,
+    QuotaAvailable = 7,
+    ReleaseLock = 8,
+    Retry = 9
+} _lock_state;
+
 typedef struct {
     char app_name[MAX_STRING_SIZE];
     char app_id[MAX_STRING_SIZE];
@@ -39,9 +52,8 @@ typedef struct {
 } _app_handle;
 
 typedef struct {
-    bool has_lock = false;
+    _lock_state state = _lock_state::None;
     uint64_t acquired_time = 0;
-    bool force_released = false;
 } _priority_lock;
 
 typedef struct {
@@ -84,17 +96,6 @@ using namespace com::watergate::common;
 namespace com {
     namespace watergate {
         namespace core {
-
-            enum lock_acquire_enum {
-                Locked = 0,
-                Expired = 1,
-                Retry = 2,
-                Timeout = 3,
-                QuotaReached = 4,
-                QuotaAvailable = 5,
-                Error = 6,
-                None = 7
-            };
 
             struct thread_lock_ptr {
                 string thread_id;
@@ -224,49 +225,57 @@ namespace com {
 
             class record_utils {
             public:
-                static string get_lock_acquire_enum_string(lock_acquire_enum value) {
+                static string get_lock_acquire_enum_string(_lock_state value) {
                     switch (value) {
-                        case lock_acquire_enum::Locked:
+                        case _lock_state::Locked:
                             return string("LOCKED");
-                        case lock_acquire_enum::None:
+                        case _lock_state::None:
                             return string("NONE");
-                        case lock_acquire_enum::Error:
+                        case _lock_state::Error:
                             return string("ERROR");
-                        case lock_acquire_enum::Expired:
+                        case _lock_state::Expired:
                             return string("EXPIRED");
-                        case lock_acquire_enum::QuotaAvailable:
-                            return string("QUOTA AVAILABLE");
-                        case lock_acquire_enum::QuotaReached:
+                        case _lock_state::QuotaReached:
                             return string("QUOTA REACHED");
-                        case lock_acquire_enum::Retry:
-                            return string("RETRY");
-                        case lock_acquire_enum::Timeout:
+                        case _lock_state::Timeout:
                             return string("TIMEOUT");
+                        case _lock_state::ForceReleased:
+                            return string("FORCE RELEASED");
+                        case _lock_state::QuotaAvailable:
+                            return string("QUOTA AVAILABLE");
+                        case _lock_state::ReleaseLock:
+                            return string("RELEASE LOCK");
+                        case _lock_state::Retry:
+                            return string("RETRY");
                         default:
                             return string("UNKNOWN");
                     }
                 }
 
-                static int get_lock_acquire_enum_int(lock_acquire_enum value) {
+                static int get_lock_acquire_enum_int(_lock_state value) {
                     switch (value) {
-                        case lock_acquire_enum::Locked:
+                        case _lock_state::Locked:
                             return 0;
-                        case lock_acquire_enum::None:
-                            return 7;
-                        case lock_acquire_enum::Error:
-                            return 6;
-                        case lock_acquire_enum::Expired:
-                            return 1;
-                        case lock_acquire_enum::QuotaAvailable:
-                            return 5;
-                        case lock_acquire_enum::QuotaReached:
+                        case _lock_state::None:
                             return 4;
-                        case lock_acquire_enum::Retry:
-                            return 2;
-                        case lock_acquire_enum::Timeout:
+                        case _lock_state::Error:
+                            return 5;
+                        case _lock_state::Expired:
                             return 3;
-                        default:
+                        case _lock_state::QuotaReached:
+                            return 1;
+                        case _lock_state::QuotaAvailable:
                             return 7;
+                        case _lock_state::Timeout:
+                            return 6;
+                        case _lock_state::ForceReleased:
+                            return 2;
+                        case _lock_state::ReleaseLock:
+                            return 8;
+                        case _lock_state::Retry:
+                            return 9;
+                        default:
+                            return 4;
                     }
                 }
 
@@ -288,8 +297,7 @@ namespace com {
 
                     for (int ii = 0; ii < MAX_PRIORITY_ALLOWED; ii++) {
                         record->lock.locks[ii].acquired_time = 0;
-                        record->lock.locks[ii].has_lock = false;
-                        record->lock.locks[ii].force_released = false;
+                        record->lock.locks[ii].state = _lock_state::None;
                     }
                 }
             };

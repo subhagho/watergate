@@ -111,7 +111,7 @@ JNIEXPORT jint JNICALL Java_com_watergate_library_LockControlClient_lock__Ljava_
 
         uint16_t retval = 0;
         int err = 0;
-        lock_acquire_enum r = client->lock(s_name, priority, quota, &err);
+        _lock_state r = client->lock(s_name, priority, quota, &err);
         jniEnv->ReleaseStringUTFChars(name, c_name);
 
         if (r == Locked && err == 0) {
@@ -151,7 +151,7 @@ JNIEXPORT jint JNICALL Java_com_watergate_library_LockControlClient_lock__Ljava_
 
         uint16_t retval = 0;
         int err = 0;
-        lock_acquire_enum r = client->lock(s_name, priority, quota, timeout, &err);
+        _lock_state r = client->lock(s_name, priority, quota, timeout, &err);
         jniEnv->ReleaseStringUTFChars(name, c_name);
 
         if (r == Locked && err == 0) {

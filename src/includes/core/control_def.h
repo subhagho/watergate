@@ -69,13 +69,13 @@ namespace com {
             class control_client : public control_def {
             private:
 
-                lock_acquire_enum try_lock(string name, int priority, int base_priority, double quota) const;
+                _lock_state try_lock(string name, int priority, int base_priority, double quota) const;
 
-                lock_acquire_enum wait_lock(string name, int priority, int base_priority, double quota) const;
+                _lock_state wait_lock(string name, int priority, int base_priority, double quota) const;
 
                 bool release_lock(string name, int priority, int base_priority) const;
 
-                lock_acquire_enum lock_get(string name, int priority, double quota, long timeout, int *err) const;
+                _lock_state lock_get(string name, int priority, double quota, long timeout, int *err) const;
 
 
             public:
@@ -116,11 +116,11 @@ namespace com {
                     return 0;
                 }
 
-                lock_acquire_enum lock(string name, int priority, double quota, int *err) const {
+                _lock_state lock(string name, int priority, double quota, int *err) const {
                     return lock(name, priority, quota, DEFAULT_MAX_TIMEOUT, err);
                 }
 
-                lock_acquire_enum lock(string name, int priority, double quota, uint64_t timeout, int *err) const {
+                _lock_state lock(string name, int priority, double quota, uint64_t timeout, int *err) const {
                     CHECK_STATE_AVAILABLE(state);
 
                     string m_name = get_metrics_name(METRIC_LOCK_PREFIX, name, priority);
@@ -129,7 +129,7 @@ namespace com {
                     timer t;
                     t.start();
 
-                    lock_acquire_enum ret;
+                    _lock_state ret;
                     com::watergate::common::alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
                     while (true) {
                         ret = lock_get(name, priority, quota, timeout, err);

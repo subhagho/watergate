@@ -72,7 +72,7 @@ void com::watergate::tests::common::basic_lock_client::run() {
             while (true) {
                 int err = 0;
                 t.restart();
-                lock_acquire_enum r = control->lock(FS_CONTROL_NAME, priority, 200, 5000, &err);
+                _lock_state r = control->lock(FS_CONTROL_NAME, priority, 200, 5000, &err);
                 t.pause();
                 if (r == Locked && err == 0) {
                     LOG_INFO("Successfully acquired lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d]", pid,

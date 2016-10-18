@@ -182,11 +182,11 @@ namespace com {
                 vector<_struct_priority_record *> counts;
                 unordered_map<string, thread_lock_record *> threads;
 
-                void reset_locks(int priority) {
+                void reset_locks(int priority, _lock_state state) {
                     counts[priority]->count = 0;
 
                     reset_thread_locks(priority);
-                    client->release_lock(Expired, priority);
+                    client->release_lock(state, priority);
                     sem_t *lock = get(priority);
                     if (IS_VALID_SEM_PTR(lock)) {
                         LOG_DEBUG("Force Released semaphore [name=%s][priority=%d]", this->name->c_str(), priority);
@@ -306,9 +306,9 @@ namespace com {
                     }
                 }
 
-                lock_acquire_enum try_lock(int priority, int base_priority, bool wait);
+                _lock_state try_lock(int priority, int base_priority, bool wait);
 
-                lock_acquire_enum try_lock_base(double quota, int base_priority, bool wait);
+                _lock_state try_lock_base(double quota, int base_priority, bool wait);
 
                 bool release_lock(int priority, int base_priority);
 

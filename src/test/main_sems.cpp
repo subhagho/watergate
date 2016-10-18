@@ -47,7 +47,7 @@ void rund(const control_client *control, int priority, thread_record *record) {
                 START_TIMER(METRIC_LOCK_TIME);
                 tl.restart();
                 err = 0;
-                lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
+                _lock_state r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
                 tl.pause();
                 END_TIMER(METRIC_LOCK_TIME, METRIC_LOCK_TIME);
                 if (r == Locked && err == 0) {
@@ -108,7 +108,7 @@ void run(const control_client *control, int priority, thread_record *record) {
                 START_TIMER(METRIC_LOCK_TIME);
                 tl.restart();
                 err = 0;
-                lock_acquire_enum r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
+                _lock_state r = control->lock(CONTROL_NAME, priority, 200, 5000 * (priority + 1), &err);
                 tl.pause();
                 END_TIMER(METRIC_LOCK_TIME, METRIC_LOCK_TIME);
 
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
         string cf(argv[1]);
         REQUIRE(!IS_EMPTY(cf));
 
-        init_utils::create_env(getenv("CONFIG_FILE_PATH"));
+        init_utils::create_env(cf);
         const __env *env = init_utils::get_env();
         REQUIRE(NOT_NULL(env));
 

@@ -57,7 +57,7 @@ TEST_CASE("Basic lock operations", "[com::watergate::core::control_def]") {
         string tid = tptr->thread_id;
 
         int err = 0;
-        lock_acquire_enum r = control->lock(CONTROL_NAME, 0, 500, &err);
+        _lock_state r = control->lock(CONTROL_NAME, 0, 500, &err);
         REQUIRE(err == 0);
         REQUIRE(r == Locked);
         LOG_INFO("Successfully acquired lock [name=%s][priority=%d]", CONTROL_NAME, 0);
@@ -118,7 +118,7 @@ TEST_CASE("Fail lock operations", "[com::watergate::core::control_def]") {
     int count = 0;
     for (int ii = 0; ii < 8; ii++) {
         int err = 0;
-        lock_acquire_enum r = control->lock(CONTROL_NAME, 0, 50, 1000, &err);
+        _lock_state r = control->lock(CONTROL_NAME, 0, 50, 1000, &err);
         REQUIRE(err == 0);
         if (r == Locked) {
             LOG_INFO("Successfully acquired lock [name=%s][priority=%d][try=%d]", CONTROL_NAME, 0, ii);
@@ -170,7 +170,7 @@ TEST_CASE("Test lock timeout operations", "[com::watergate::core::control_def]")
     int count = 0;
     for (int ii = 0; ii < 8; ii++) {
         int err = 0;
-        lock_acquire_enum r = control->lock(CONTROL_NAME, 0, 500, 1000, &err);
+        _lock_state r = control->lock(CONTROL_NAME, 0, 500, 1000, &err);
         REQUIRE(err == 0);
         if (r == Locked) {
             LOG_INFO("Successfully acquired lock [name=%s][priority=%d][try=%d]", CONTROL_NAME, 0, ii);

@@ -26,7 +26,7 @@ size_t com::watergate::core::io::fs_writer::write(const void *ptr, size_t size, 
     size_t written = 0;
     if (size * nitems < quota_max) {
         int err = 0;
-        lock_acquire_enum r = None;
+        _lock_state r = None;
         _LOCK_(lock_name, priority, (size * nitems), timeout, err, r);
         if (r == Locked && err == 0) {
             try {
@@ -57,7 +57,7 @@ size_t com::watergate::core::io::fs_writer::write(const void *ptr, size_t size, 
             if (rem > (c_size - written)) {
                 rem = (c_size - written);
             }
-            lock_acquire_enum r = None;
+            _lock_state r = None;
             _LOCK_(lock_name, priority, rem, timeout, err, r);
             if (r == Locked && err == 0) {
                 try {

@@ -107,7 +107,7 @@ com::watergate::core::_semaphore::~_semaphore() {
     CHECK_AND_FREE(table);
 }
 
-lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority, int base_priority, bool wait) {
+_lock_state com::watergate::core::_semaphore_client::try_lock(int priority, int base_priority, bool wait) {
     PRECONDITION(priority >= 0 && priority < priorities);
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
@@ -130,7 +130,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
         throw CONTROL_ERROR("No lock record found for thread.[thread=%s]", tid.c_str());
     }
 
-    lock_acquire_enum ls = client->has_valid_lock(priority);
+    _lock_state ls = client->has_valid_lock(priority);
     if (ls == Locked) {
         counts[priority]->count++;
         t_rec->increment(priority);
@@ -139,7 +139,9 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
         return ls;
     } else if (ls == Expired) {
         LOG_DEBUG("Lock expired. [resetting all semaphores][priority=%d][base priority=%d]", priority, base_priority);
-        reset_locks(priority);
+        reset_locks(priority, ls);
+    } else if (ls == QuotaReached) {
+        return ls;
     }
 
     sem_t *lock = get(priority);
@@ -165,7 +167,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
 
             return Locked;
         } else {
-            if (wait) {
+            if (!wait) {
                 LOG_DEBUG("Failed to acquire semaphore. [name=%s][priority=%d][base priority=%d][error=%s]",
                           this->name->c_str(), priority, base_priority,
                           strerror(errno));
@@ -179,7 +181,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock(int priority
                         priority);
 }
 
-lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double quota, int base_priority, bool wait) {
+_lock_state com::watergate::core::_semaphore_client::try_lock_base(double quota, int base_priority, bool wait) {
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
     ASSERT(NOT_NULL(semaphores));
@@ -200,7 +202,7 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double 
         throw CONTROL_ERROR("No lock record found for thread.[thread=%s]", tid.c_str());
     }
 
-    lock_acquire_enum ls = client->check_and_lock(quota);
+    _lock_state ls = client->check_and_lock(quota);
     if (ls == Locked) {
         counts[BASE_PRIORITY]->count++;
         t_rec->increment(BASE_PRIORITY);
@@ -212,7 +214,12 @@ lock_acquire_enum com::watergate::core::_semaphore_client::try_lock_base(double 
     } else if (ls == Expired) {
         LOG_DEBUG("Lock expired. [resetting all semaphores][priority=%d][base priority=%d]", BASE_PRIORITY,
                   base_priority);
-        reset_locks(BASE_PRIORITY);
+        reset_locks(BASE_PRIORITY, ls);
+    } else if (ls == ReleaseLock) {
+        LOG_DEBUG("Quota exhausted. [resetting all semaphores][priority=%d][base priority=%d]", BASE_PRIORITY,
+                  base_priority);
+        reset_locks(BASE_PRIORITY, ls);
+        return QuotaReached;
     }
 
     sem_t *lock = get(BASE_PRIORITY);
@@ -282,7 +289,7 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
         throw CONTROL_ERROR("No lock record found for thread.[thread=%s]", tid.c_str());
     }
 
-    lock_acquire_enum ls = client->has_valid_lock(BASE_PRIORITY);
+    _lock_state ls = client->has_valid_lock(BASE_PRIORITY);
     if (ls == Locked) {
         counts[BASE_PRIORITY]->count--;
         t_rec->decremet(BASE_PRIORITY);
@@ -317,7 +324,7 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
     } else if (ls == Expired) {
         LOG_DEBUG("Lock expired. [Lock should be retried][priority=%d][base priority=%d]", BASE_PRIORITY,
                   base_priority);
-        reset_locks(BASE_PRIORITY);
+        reset_locks(BASE_PRIORITY, ls);
         return true;
     } else {
         LOG_DEBUG("Lock already released. [state=%s][priority=%d][base priority=%d]",
@@ -355,7 +362,7 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
         throw CONTROL_ERROR("No lock record found for thread.[thread=%s]", tid.c_str());
     }
 
-    lock_acquire_enum ls = client->has_valid_lock(priority);
+    _lock_state ls = client->has_valid_lock(priority);
     if (ls == Locked) {
         counts[priority]->count--;
         t_rec->decremet(priority);
@@ -389,11 +396,12 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
         }
     } else if (ls == Expired) {
         LOG_DEBUG("Lock expired. [resetting all semaphores] [priority=%d][base priority=%d]", priority, base_priority);
-        reset_locks(priority);
+        reset_locks(priority, ls);
         return true;
     } else {
         LOG_DEBUG("Lock already released. [state=%s][priority=%d][base priority=%d]",
                   record_utils::get_lock_acquire_enum_string(ls).c_str(), priority, base_priority);
+        return false;
     }
     LOG_DEBUG("Invalid lock state. [state=%s][priority=%d][base priority=%d]",
               record_utils::get_lock_acquire_enum_string(ls).c_str(), priority, base_priority);

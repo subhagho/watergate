@@ -75,7 +75,7 @@ com::watergate::core::control_def::~control_def() {
     }
 }
 
-lock_acquire_enum
+_lock_state
 com::watergate::core::control_client::try_lock(string name, int priority, int base_priority, double quota) const {
     CHECK_STATE_AVAILABLE(state);
 
@@ -85,7 +85,7 @@ com::watergate::core::control_client::try_lock(string name, int priority, int ba
     }
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
 
-    lock_acquire_enum r = lock_acquire_enum::None;
+    _lock_state r = _lock_state::None;
 
     if (IS_BASE_PRIORITY(priority)) {
         r = sem_c->try_lock_base(quota, base_priority, false);
@@ -98,7 +98,7 @@ com::watergate::core::control_client::try_lock(string name, int priority, int ba
     return r;
 }
 
-lock_acquire_enum
+_lock_state
 com::watergate::core::control_client::wait_lock(string name, int priority, int base_priority, double quota) const {
     CHECK_STATE_AVAILABLE(state);
 
@@ -109,7 +109,7 @@ com::watergate::core::control_client::wait_lock(string name, int priority, int b
 
     _semaphore_client *sem_c = static_cast<_semaphore_client *>(sem);
 
-    lock_acquire_enum r = lock_acquire_enum::None;
+    _lock_state r = _lock_state::None;
 
     if (IS_BASE_PRIORITY(priority)) {
         r = sem_c->try_lock_base(quota, base_priority, true);
@@ -138,14 +138,14 @@ bool com::watergate::core::control_client::release_lock(string name, int priorit
         return sem_c->release_lock(priority, base_priority);
 }
 
-lock_acquire_enum
+_lock_state
 com::watergate::core::control_client::lock_get(string name, int priority, double quota, long timeout, int *err) const {
 
     timer t;
     t.start();
 
 
-    lock_acquire_enum ret = wait_lock(name, priority, priority, quota);
+    _lock_state ret = wait_lock(name, priority, priority, quota);
     if (ret == Error) {
         throw CONTROL_ERROR("Error acquiring base lock. [name=%s]", name.c_str());
     } else if (ret != QuotaReached) {

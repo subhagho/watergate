@@ -29,7 +29,7 @@
 
 #define RELEASE_LOCK_RECORD(rec, priority) do {\
     LOG_DEBUG("[priority=%d] Resetting lock record...", priority); \
-    rec->lock.locks[priority].has_lock = false; \
+    rec->lock.locks[priority].state = _lock_state::None; \
     rec->lock.locks[priority].acquired_time = 0; \
     if (IS_BASE_PRIORITY(priority)) rec->lock.quota_used = 0; \
 }while(0)
@@ -172,13 +172,12 @@ namespace com {
                         _lock_record *rec = &ptr->records[ii];
                         if (rec->used) {
                             for (int jj = 0; jj < MAX_PRIORITY_ALLOWED; jj++) {
-                                if (rec->lock.locks[jj].has_lock) {
+                                if (rec->lock.locks[jj].state == _lock_state::Locked) {
                                     uint64_t at = rec->lock.locks[jj].acquired_time + ptr->lock_lease_time;
                                     uint64_t now = time_utils::now();
                                     if ((at + expiry_time) <= now) {
                                         counts[jj]++;
-                                        rec->lock.locks[jj].has_lock = false;
-                                        rec->lock.locks[jj].force_released = true;
+                                        rec->lock.locks[jj].state = _lock_state::None;
                                         rec->lock.locks[jj].acquired_time = 0;
                                     }
                                 }
@@ -213,7 +212,7 @@ namespace com {
                 _lock_record *lock_record;
 
                 bool is_lock_active(int priority) {
-                    if (lock_record->lock.locks[priority].has_lock) {
+                    if (lock_record->lock.locks[priority].state == _lock_state::Locked) {
                         uint64_t now = time_utils::now();
                         if (now < (lock_record->lock.locks[priority].acquired_time + get_lock_lease_time())) {
                             return true;
@@ -279,11 +278,11 @@ namespace com {
                     return create_new_record(app_name, app_id, pid);
                 }
 
-                lock_acquire_enum has_valid_lock(int priority) {
+                _lock_state has_valid_lock(int priority) {
                     CHECK_STATE_AVAILABLE(state);
 
 
-                    lock_acquire_enum r = None;
+                    _lock_state r = None;
                     pid_t pid = getpid();
                     if (lock_record->app.proc_id != pid) {
                         lock_table_error te = LOCK_TABLE_ERROR(
@@ -292,48 +291,54 @@ namespace com {
                     }
 
                     lock_record->app.last_active_ts = time_utils::now();
-                    if (lock_record->lock.locks[priority].has_lock) {
+                    if (lock_record->lock.locks[priority].state == _lock_state::Locked) {
                         if (!is_lock_active(priority)) {
-                            lock_record->lock.locks[priority].has_lock = false;
+                            lock_record->lock.locks[priority].state = _lock_state::None;
                             lock_record->lock.locks[priority].acquired_time = 0;
                             r = Expired;
                         } else {
                             r = Locked;
                         }
-                    } else if (lock_record->lock.locks[priority].force_released) {
-                        lock_record->lock.locks[priority].force_released = false;
+                    } else if (lock_record->lock.locks[priority].state == _lock_state::ForceReleased) {
+                        lock_record->lock.locks[priority].state = _lock_state::None;
                         r = Expired;
+                    } else if (lock_record->lock.locks[priority].state == _lock_state::QuotaReached) {
+                        uint64_t now = time_utils::now();
+                        if (now > (lock_record->lock.locks[priority].acquired_time + get_lock_lease_time())) {
+                            lock_record->lock.locks[priority].state = _lock_state::None;
+                            lock_record->lock.quota_used = 0;
+                            r = None;
+                        } else
+                            r = QuotaReached;
                     }
 
                     return r;
                 }
 
 
-                lock_acquire_enum check_and_lock(double quota) {
+                _lock_state check_and_lock(double quota) {
                     CHECK_STATE_AVAILABLE(state);
 
-                    lock_acquire_enum ls = has_valid_lock(BASE_PRIORITY);
+                    _lock_state ls = has_valid_lock(BASE_PRIORITY);
                     if (ls == Expired) {
                         release_lock(ls, BASE_PRIORITY);
                     } else if (ls == Locked) {
-                        do {
-                            double q = get_quota();
-                            if (q > 0) {
-                                double aq = q - lock_record->lock.quota_used;
-                                if (aq < quota) {
-                                    return QuotaReached;
-                                }
-                                lock_record->lock.quota_used += quota;
-                                lock_record->lock.quota_total += quota;
-                                LOG_DEBUG("[priority=%d] Current quota used = %f", BASE_PRIORITY,
-                                          lock_record->lock.quota_used);
+                        double q = get_quota();
+                        if (q > 0) {
+                            double aq = q - lock_record->lock.quota_used;
+                            if (aq < quota) {
+                                return ReleaseLock;
                             }
-                        } while (0);
+                            lock_record->lock.quota_used += quota;
+                            lock_record->lock.quota_total += quota;
+                            LOG_DEBUG("[priority=%d] Current quota used = %f", BASE_PRIORITY,
+                                      lock_record->lock.quota_used);
+                        }
                     }
                     return ls;
                 }
 
-                lock_acquire_enum quota_available(double quota) {
+                _lock_state quota_available(double quota) {
                     CHECK_STATE_AVAILABLE(state);
 
                     do {
@@ -353,10 +358,8 @@ namespace com {
                 void update_lock(int priority) {
                     CHECK_STATE_AVAILABLE(state);
 
-                    do {
-                        lock_record->lock.locks[priority].has_lock = true;
-                        lock_record->lock.locks[priority].acquired_time = time_utils::now();
-                    } while (0);
+                    lock_record->lock.locks[priority].state = _lock_state::Locked;
+                    lock_record->lock.locks[priority].acquired_time = time_utils::now();
                 }
 
                 void update_quota(double quota, int priority) {
@@ -369,13 +372,15 @@ namespace com {
                     } while (0);
                 }
 
-                void release_lock(lock_acquire_enum lock_state, int priority) {
+                void release_lock(_lock_state lock_state, int priority) {
                     CHECK_STATE_AVAILABLE(state);
                     if (lock_state == Expired || lock_state == Locked) {
-                        if (lock_record->lock.locks[priority].has_lock) {
-                            do {
-                                RELEASE_LOCK_RECORD(lock_record, priority);
-                            } while (0);
+                        if (lock_record->lock.locks[priority].state == Locked) {
+                            RELEASE_LOCK_RECORD(lock_record, priority);
+                        }
+                    } else if (lock_state == ReleaseLock) {
+                        if (lock_record->lock.locks[priority].state == Locked) {
+                            lock_record->lock.locks[priority].state = QuotaReached;
                         }
                     }
                 }
@@ -399,7 +404,7 @@ namespace com {
                                   time_utils::get_time_string(lock_record->app.last_active_ts).c_str());
                         for (int ii = 0; ii < MAX_PRIORITY_ALLOWED; ii++) {
                             LOG_DEBUG("\t\t[%d] has lock=%s", ii,
-                                      (lock_record->lock.locks[ii].has_lock ? "true" : "false"));
+                                      ((lock_record->lock.locks[ii].state == Locked) ? "true" : "false"));
                             LOG_DEBUG("\t\t[%d] acquired time=%s", ii,
                                       (lock_record->lock.locks[ii].acquired_time > 0 ? time_utils::get_time_string(
                                               lock_record->lock.locks[ii].acquired_time).c_str() : "N/A"));
