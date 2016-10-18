@@ -177,7 +177,7 @@ namespace com {
                                     uint64_t now = time_utils::now();
                                     if ((at + expiry_time) <= now) {
                                         counts[jj]++;
-                                        rec->lock.locks[jj].state = _lock_state::None;
+                                        rec->lock.locks[jj].state = _lock_state::ForceReleased;
                                         rec->lock.locks[jj].acquired_time = 0;
                                     }
                                 }
@@ -278,7 +278,7 @@ namespace com {
                     return create_new_record(app_name, app_id, pid);
                 }
 
-                _lock_state has_valid_lock(int priority) {
+                _lock_state has_valid_lock(int priority, double quota) {
                     CHECK_STATE_AVAILABLE(state);
 
 
@@ -296,12 +296,21 @@ namespace com {
                             lock_record->lock.locks[priority].state = _lock_state::None;
                             lock_record->lock.locks[priority].acquired_time = 0;
                             r = Expired;
+                        } else if (quota > 0) {
+                            double q = get_quota();
+                            if (q > 0) {
+                                double aq = q - lock_record->lock.quota_used;
+                                if (aq < quota) {
+                                    return ReleaseLock;
+                                }
+                            }
+                            r = Locked;
                         } else {
                             r = Locked;
                         }
                     } else if (lock_record->lock.locks[priority].state == _lock_state::ForceReleased) {
                         lock_record->lock.locks[priority].state = _lock_state::None;
-                        r = Expired;
+                        r = ForceReleased;
                     } else if (lock_record->lock.locks[priority].state == _lock_state::QuotaReached) {
                         uint64_t now = time_utils::now();
                         if (now > (lock_record->lock.locks[priority].acquired_time + get_lock_lease_time())) {
@@ -319,21 +328,12 @@ namespace com {
                 _lock_state check_and_lock(double quota) {
                     CHECK_STATE_AVAILABLE(state);
 
-                    _lock_state ls = has_valid_lock(BASE_PRIORITY);
+                    _lock_state ls = has_valid_lock(BASE_PRIORITY, quota);
                     if (ls == Expired) {
                         release_lock(ls, BASE_PRIORITY);
                     } else if (ls == Locked) {
-                        double q = get_quota();
-                        if (q > 0) {
-                            double aq = q - lock_record->lock.quota_used;
-                            if (aq < quota) {
-                                return ReleaseLock;
-                            }
-                            lock_record->lock.quota_used += quota;
-                            lock_record->lock.quota_total += quota;
-                            LOG_DEBUG("[priority=%d] Current quota used = %f", BASE_PRIORITY,
-                                      lock_record->lock.quota_used);
-                        }
+                        lock_record->lock.quota_used += quota;
+                        lock_record->lock.quota_total += quota;
                     }
                     return ls;
                 }
@@ -341,16 +341,14 @@ namespace com {
                 _lock_state quota_available(double quota) {
                     CHECK_STATE_AVAILABLE(state);
 
-                    do {
-                        double q = get_quota();
-                        if (q > 0) {
-                            double aq = q - lock_record->lock.quota_used;
-                            if (aq < quota) {
-                                LOG_DEBUG("Quota Reached %f", lock_record->lock.quota_used);
-                                return QuotaReached;
-                            }
+                    double q = get_quota();
+                    if (q > 0) {
+                        double aq = q - lock_record->lock.quota_used;
+                        if (aq < quota) {
+                            LOG_DEBUG("Quota Reached %f", lock_record->lock.quota_used);
+                            return QuotaReached;
                         }
-                    } while (0);
+                    }
 
                     return QuotaAvailable;
                 }
@@ -364,12 +362,15 @@ namespace com {
 
                 void update_quota(double quota, int priority) {
                     CHECK_STATE_AVAILABLE(state);
-                    do {
-                        lock_record->lock.quota_used += quota;
-                        lock_record->lock.quota_total += quota;
-                        LOG_DEBUG("[priority=%d] Current quota used = %f", priority,
-                                  lock_record->lock.quota_used);
-                    } while (0);
+                    lock_record->lock.quota_used += quota;
+                    lock_record->lock.quota_total += quota;
+                    LOG_DEBUG("[priority=%d] Current quota used = %f", priority,
+                              lock_record->lock.quota_used);
+                }
+
+                void reset_quota() {
+                    CHECK_STATE_AVAILABLE(state);
+                    lock_record->lock.quota_used = 0;
                 }
 
                 void release_lock(_lock_state lock_state, int priority) {

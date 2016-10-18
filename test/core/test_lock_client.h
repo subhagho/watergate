@@ -25,7 +25,7 @@
 #define TCL_CONFIG_VALUE_TRIES "lock.tries"
 
 #define CONTROL_NAME "dummy-resource-1"
-#define FS_CONTROL_NAME "/tmp"
+#define FS_CONTROL_NAME "/private/tmp"
 
 using namespace com::watergate::common;
 using namespace com::watergate::core;
@@ -41,6 +41,9 @@ namespace com {
                     int lock_tries;
 
                 public:
+                    basic_lock_client(int priority) {
+                        this->priority = priority;
+                    }
 
                     void setup();
 

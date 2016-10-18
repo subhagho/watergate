@@ -170,7 +170,8 @@ int main(int argc, char *argv[]) {
         if (priority < 0)
             throw BASE_ERROR("Invalid priority specified. [priority=%d]", priority);
 
-        com::watergate::tests::common::basic_lock_client *client = new com::watergate::tests::common::basic_lock_client();
+        com::watergate::tests::common::basic_lock_client *client = new com::watergate::tests::common::basic_lock_client(
+                priority);
         client->setup();
         client->run();
 

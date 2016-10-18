@@ -107,7 +107,8 @@ com::watergate::core::_semaphore::~_semaphore() {
     CHECK_AND_FREE(table);
 }
 
-_lock_state com::watergate::core::_semaphore_client::try_lock(int priority, int base_priority, bool wait) {
+_lock_state
+com::watergate::core::_semaphore_client::try_lock(int priority, double quota, int base_priority, bool wait) {
     PRECONDITION(priority >= 0 && priority < priorities);
     PRECONDITION(base_priority >= 0 && base_priority < priorities);
 
@@ -130,7 +131,7 @@ _lock_state com::watergate::core::_semaphore_client::try_lock(int priority, int 
         throw CONTROL_ERROR("No lock record found for thread.[thread=%s]", tid.c_str());
     }
 
-    _lock_state ls = client->has_valid_lock(priority);
+    _lock_state ls = client->has_valid_lock(priority, quota);
     if (ls == Locked) {
         counts[priority]->count++;
         t_rec->increment(priority);
@@ -142,6 +143,10 @@ _lock_state com::watergate::core::_semaphore_client::try_lock(int priority, int 
         reset_locks(priority, ls);
     } else if (ls == QuotaReached) {
         return ls;
+    } else if (ls == ForceReleased) {
+        counts[priority]->count = 0;
+        reset_thread_locks(priority);
+        LOG_DEBUG("Lock released by server.[priority=%d][base priority=%d]", priority, base_priority);
     }
 
     sem_t *lock = get(priority);
@@ -220,6 +225,12 @@ _lock_state com::watergate::core::_semaphore_client::try_lock_base(double quota,
                   base_priority);
         reset_locks(BASE_PRIORITY, ls);
         return QuotaReached;
+    } else if (ls == ForceReleased) {
+        counts[BASE_PRIORITY]->count = 0;
+        reset_thread_locks(BASE_PRIORITY);
+        client->reset_quota();
+
+        LOG_DEBUG("Lock released by server.[priority=%d][base priority=%d]", BASE_PRIORITY, base_priority);
     }
 
     sem_t *lock = get(BASE_PRIORITY);
@@ -289,7 +300,7 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
         throw CONTROL_ERROR("No lock record found for thread.[thread=%s]", tid.c_str());
     }
 
-    _lock_state ls = client->has_valid_lock(BASE_PRIORITY);
+    _lock_state ls = client->has_valid_lock(BASE_PRIORITY, 0);
     if (ls == Locked) {
         counts[BASE_PRIORITY]->count--;
         t_rec->decremet(BASE_PRIORITY);
@@ -326,9 +337,14 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
                   base_priority);
         reset_locks(BASE_PRIORITY, ls);
         return true;
-    } else {
-        LOG_DEBUG("Lock already released. [state=%s][priority=%d][base priority=%d]",
-                  record_utils::get_lock_acquire_enum_string(ls).c_str(), BASE_PRIORITY, base_priority);
+    } else if (ls == ForceReleased) {
+        counts[BASE_PRIORITY]->count = 0;
+        reset_thread_locks(BASE_PRIORITY);
+        client->reset_quota();
+
+        LOG_DEBUG("Lock released by server.[priority=%d][base priority=%d]", BASE_PRIORITY, base_priority);
+
+        return false;
     }
     LOG_DEBUG("Invalid lock state. [state=%s][priority=%d][base priority=%d]",
               record_utils::get_lock_acquire_enum_string(ls).c_str(), BASE_PRIORITY, base_priority);
@@ -362,7 +378,7 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
         throw CONTROL_ERROR("No lock record found for thread.[thread=%s]", tid.c_str());
     }
 
-    _lock_state ls = client->has_valid_lock(priority);
+    _lock_state ls = client->has_valid_lock(priority, 0);
     if (ls == Locked) {
         counts[priority]->count--;
         t_rec->decremet(priority);
@@ -398,9 +414,11 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
         LOG_DEBUG("Lock expired. [resetting all semaphores] [priority=%d][base priority=%d]", priority, base_priority);
         reset_locks(priority, ls);
         return true;
-    } else {
-        LOG_DEBUG("Lock already released. [state=%s][priority=%d][base priority=%d]",
-                  record_utils::get_lock_acquire_enum_string(ls).c_str(), priority, base_priority);
+    } else if (ls == ForceReleased) {
+        counts[priority]->count = 0;
+        reset_thread_locks(priority);
+        LOG_DEBUG("Lock released by server.[priority=%d][base priority=%d]", priority, base_priority);
+
         return false;
     }
     LOG_DEBUG("Invalid lock state. [state=%s][priority=%d][base priority=%d]",

@@ -94,7 +94,7 @@ com::watergate::core::control_client::try_lock(string name, int priority, int ba
             com::watergate::common::metrics_utils::update(q_name, quota);
         }
     } else
-        r = sem_c->try_lock(priority, base_priority, false);
+        r = sem_c->try_lock(priority, quota, base_priority, false);
     return r;
 }
 
@@ -118,7 +118,7 @@ com::watergate::core::control_client::wait_lock(string name, int priority, int b
             com::watergate::common::metrics_utils::update(q_name, quota);
         }
     } else
-        r = sem_c->try_lock(priority, base_priority, true);
+        r = sem_c->try_lock(priority, quota, base_priority, true);
     return r;
 }
 

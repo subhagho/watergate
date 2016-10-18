@@ -2,7 +2,10 @@ package com.watergate.library.io;
 
 import com.watergate.library.LockClientEnv;
 import com.watergate.library.utils.LogUtils;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import org.kohsuke.args4j.OptionHandlerFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,11 +27,11 @@ public class PriorityTestRunner implements Runnable {
 	private static final String CONTROL_DEF_CONFIG_PATH =
 			"/configuration/control/def";
 
-	@Option(name = "priority", required = true, aliases = {"p"})
+	@Option(name = "--priority", required = true, aliases = {"-p"})
 	private short priority;
-	@Option(name = "index", required = true, aliases = {"i"})
+	@Option(name = "--index", required = true, aliases = {"-i"})
 	private int index;
-	@Option(name = "cycles", required = true, aliases = {"c"})
+	@Option(name = "--cycles", required = true, aliases = {"-c"})
 	private int cycles;
 
 	public PriorityTestRunner(short priority, int index, int cycles) {
@@ -41,7 +44,7 @@ public class PriorityTestRunner implements Runnable {
 	}
 
 	private void init() throws Exception {
-		LockClientEnv.createEnv(CONFIG_FILE, "Test_PriorityFileInputStream",
+		LockClientEnv.createEnv(CONFIG_FILE, "PriorityTestRunner_" + index,
 				CONTROL_DEF_CONFIG_PATH);
 
 	}
@@ -128,10 +131,25 @@ public class PriorityTestRunner implements Runnable {
 
 	public static void main(String[] args) {
 		try {
+			PriorityTestRunner runner = new PriorityTestRunner();
+			CmdLineParser cp = new CmdLineParser(runner);
+			cp.getProperties().withUsageWidth(120);
 
+			try {
+				cp.parseArgument(args);
+			} catch (CmdLineException e) {
+				System.err.println(String.format("Usage:\n %s %s",
+						PriorityTestRunner.class.getCanonicalName(),
+						cp.printExample(OptionHandlerFilter.ALL)));
+				throw e;
+			}
+			runner.init();
+			runner.run();
 			LockClientEnv.getLockClient().test_assert();
+			runner.dispose();
 		} catch (Throwable t) {
 			t.printStackTrace();
+			System.exit(-1);
 		}
 	}
 }

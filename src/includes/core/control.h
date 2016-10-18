@@ -306,7 +306,7 @@ namespace com {
                     }
                 }
 
-                _lock_state try_lock(int priority, int base_priority, bool wait);
+                _lock_state try_lock(int priority, double quota, int base_priority, bool wait);
 
                 _lock_state try_lock_base(double quota, int base_priority, bool wait);
 
