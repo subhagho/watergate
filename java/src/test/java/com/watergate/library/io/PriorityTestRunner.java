@@ -82,6 +82,9 @@ public class PriorityTestRunner implements Runnable {
 			long write_time = 0;
 			long read_time = 0;
 			for (int ii = 0; ii < cycles; ii++) {
+				LogUtils.mesg(getClass(), String.format("Running cycle " +
+								"[index=%d][priority=%d][cycle=%d]",
+						index, priority, ii));
 				String outfile = String.format("/tmp/%s/output/%s_%d.txt",
 						getClass().getSimpleName(), runid, ii);
 				File of = new File(outfile);

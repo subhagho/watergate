@@ -36,7 +36,7 @@
         }
       ],
       "manager": {
-        "lock.reset.time": "5s",
+        "lock.reset.time": "50s",
         "record.reset.time": "300s"
       }
     },

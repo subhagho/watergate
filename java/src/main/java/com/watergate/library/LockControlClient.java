@@ -2,6 +2,7 @@ package com.watergate.library;
 
 
 import com.watergate.library.ObjectState.EObjectState;
+import com.watergate.library.utils.LogUtils;
 
 /**
  * Created by subho on 16/10/16.
@@ -97,12 +98,16 @@ public class LockControlClient {
 
 	public ELockResult getLock(String name, int priority, double quota) throws LockControlException {
 		int r = lock(name, priority, quota);
+		LogUtils.debug(getClass(), String.format("[name=%s][priority=%d] Lock" +
+				" response %d", name, priority, r));
 		return ELockResult.parse(r);
 	}
 
 	public ELockResult getLock(String name, int priority, double quota, long
 			timeout) throws LockControlException {
 		int r = lock(name, priority, quota, timeout);
+		LogUtils.debug(getClass(), String.format("[name=%s][priority=%d] Lock" +
+				" response %d", name, priority, r));
 		return ELockResult.parse(r);
 	}
 

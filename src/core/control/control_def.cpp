@@ -172,6 +172,8 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
             for (int ii = priority - 1; ii >= 0; ii--) {
                 while (true) {
                     if (t.get_current_elapsed() > timeout) {
+                        TRACE("[pid=%d] Lock call timeout. [name=%s][priority=%d][timeout=%d]", pid, name.c_str(),
+                              priority, timeout);
                         *err = ERR_CORE_CONTROL_TIMEOUT;
                         ret = Timeout;
                         break;
@@ -184,8 +186,9 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
                         }
                     }
                     if (error) {
-                        *err = ERR_CORE_CONTROL_TIMEOUT;
-                        ret = Timeout;
+                        TRACE("[pid=%d] Prior lock timeout. [name=%s][priority=%d][timeout=%d]", pid, name.c_str(),
+                              priority, timeout);
+                        ret = Retry;
                         break;
                     }
                     ret = this->try_lock(name, ii, priority, quota);

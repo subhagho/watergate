@@ -294,8 +294,11 @@ namespace com {
                     lock_record->app.last_active_ts = time_utils::now();
                     if (lock_record->lock.locks[priority].state == _lock_state::Locked) {
                         if (!is_lock_active(priority)) {
-                            TRACE("[pid=%d][thread=%s][name=%s][priority=%d] Lock has expired.", pid, thread_id.c_str(),
-                                  name.c_str(), priority);
+                            TRACE("[pid=%d][thread=%s][name=%s][priority=%d][acquired=%lu][timeout=%lu] Lock has expired.",
+                                  pid,
+                                  thread_id.c_str(),
+                                  name.c_str(), priority, lock_record->lock.locks[priority].acquired_time,
+                                  get_lock_lease_time());
                             r = Expired;
                         } else if (quota > 0) {
                             double q = get_quota();

@@ -133,8 +133,9 @@ namespace com {
                     _lock_state ret;
                     com::watergate::common::alarm a(DEFAULT_LOCK_LOOP_SLEEP_TIME * (priority + 1));
                     while (true) {
+                        err = 0;
                         ret = lock_get(name, priority, quota, timeout, err);
-                        if (ret != QuotaReached) {
+                        if (ret != QuotaReached && ret != Retry) {
                             break;
                         }
                         if (!a.start()) {
@@ -142,6 +143,8 @@ namespace com {
                             break;
                         }
                         if (t.get_current_elapsed() > timeout && (priority != 0)) {
+                            TRACE("Lock call timeout. [name=%s][priority=%d][timeout=%lu]", name.c_str(), priority,
+                                  timeout);
                             *err = ERR_CORE_CONTROL_TIMEOUT;
                             ret = Timeout;
                             break;

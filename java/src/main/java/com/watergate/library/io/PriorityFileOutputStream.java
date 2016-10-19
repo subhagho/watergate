@@ -6,6 +6,7 @@ import com.watergate.library.LockControlClient.ELockResult;
 import com.watergate.library.LockControlClient.EResourceType;
 import com.watergate.library.LockControlException;
 import com.watergate.library.ObjectState.StateException;
+import com.watergate.library.utils.LogUtils;
 
 import java.io.*;
 import java.util.concurrent.TimeoutException;
@@ -164,6 +165,8 @@ public class PriorityFileOutputStream extends FileOutputStream {
 	private void writeBlock(byte[] b, int off, int len) throws IOException,
 			LockControlException, TimeoutException {
 		ELockResult r = lockClient.getLock(lockname, priority, len);
+		LogUtils.debug(getClass(), "Lock result returned [" + r.name
+				() + "]");
 		if (r == ELockResult.Locked) {
 			currentLockCount++;
 			super.write(b, off, len);

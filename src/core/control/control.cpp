@@ -140,13 +140,15 @@ com::watergate::core::_semaphore_client::try_lock(int priority, double quota, in
         t_ptr->priority_lock_index[priority]->acquired_time = time_utils::now();
         return ls;
     } else if (ls == Expired) {
-        LOG_DEBUG("[pid=%d][thread=%s] Lock expired. [resetting all semaphores][priority=%d][base priority=%d]",
-                  pid, t_ptr->thread_id.c_str(), priority, base_priority);
+        LOG_DEBUG(
+                "[pid=%d][thread=%s][try_lock] Lock expired. [resetting all semaphores][priority=%d][base priority=%d]",
+                pid, t_ptr->thread_id.c_str(), priority, base_priority);
         reset_locks(priority, ls);
     } else if (ls == ReleaseLock) {
-        LOG_DEBUG("[pid=%d][thread=%s] Quota exhausted. [resetting all semaphores][priority=%d][base priority=%d]",
-                  pid, t_ptr->thread_id.c_str(), BASE_PRIORITY,
-                  base_priority);
+        LOG_DEBUG(
+                "[pid=%d][thread=%s][try_lock] Quota exhausted. [resetting all semaphores][priority=%d][base priority=%d]",
+                pid, t_ptr->thread_id.c_str(), BASE_PRIORITY,
+                base_priority);
         reset_locks(priority, ls);
         return QuotaReached;
     } else if (ls == QuotaReached) {
@@ -154,7 +156,7 @@ com::watergate::core::_semaphore_client::try_lock(int priority, double quota, in
     } else if (ls == ForceReleased) {
         counts[priority]->count = 0;
         reset_thread_locks(priority);
-        LOG_DEBUG("[pid=%d][thread=%s] Lock released by server.[priority=%d][base priority=%d]", pid,
+        LOG_DEBUG("[pid=%d][thread=%s][try_lock] Lock released by server.[priority=%d][base priority=%d]", pid,
                   t_ptr->thread_id.c_str(),
                   priority,
                   base_priority);
@@ -232,14 +234,16 @@ _lock_state com::watergate::core::_semaphore_client::try_lock_base(double quota,
     } else if (ls == QuotaReached) {
         return ls;
     } else if (ls == Expired) {
-        LOG_DEBUG("[pid=%d][thread=%s] Lock expired. [resetting all semaphores][priority=%d][base priority=%d]",
-                  pid, t_ptr->thread_id.c_str(), BASE_PRIORITY,
-                  base_priority);
+        LOG_DEBUG(
+                "[pid=%d][thread=%s][try_lock_base] Lock expired. [resetting all semaphores][priority=%d][base priority=%d]",
+                pid, t_ptr->thread_id.c_str(), BASE_PRIORITY,
+                base_priority);
         reset_locks(BASE_PRIORITY, ls);
     } else if (ls == ReleaseLock) {
-        LOG_DEBUG("[pid=%d][thread=%s] Quota exhausted. [resetting all semaphores][priority=%d][base priority=%d]",
-                  pid, t_ptr->thread_id.c_str(), BASE_PRIORITY,
-                  base_priority);
+        LOG_DEBUG(
+                "[pid=%d][thread=%s][try_lock_base] Quota exhausted. [resetting all semaphores][priority=%d][base priority=%d]",
+                pid, t_ptr->thread_id.c_str(), BASE_PRIORITY,
+                base_priority);
         reset_locks(BASE_PRIORITY, ls);
         return QuotaReached;
     } else if (ls == ForceReleased) {
@@ -247,7 +251,7 @@ _lock_state com::watergate::core::_semaphore_client::try_lock_base(double quota,
         reset_thread_locks(BASE_PRIORITY);
         client->reset_quota();
 
-        LOG_DEBUG("[pid=%d][thread=%s] Lock released by server.[priority=%d][base priority=%d]", pid,
+        LOG_DEBUG("[pid=%d][thread=%s][try_lock_base] Lock released by server.[priority=%d][base priority=%d]", pid,
                   t_ptr->thread_id.c_str(),
                   BASE_PRIORITY,
                   base_priority);
@@ -361,9 +365,10 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
             return false;
         }
     } else if (ls == Expired) {
-        LOG_DEBUG("[pid=%d][thread=%s] Lock expired. [Lock should be retried][priority=%d][base priority=%d]",
-                  pid, t_ptr->thread_id.c_str(), BASE_PRIORITY,
-                  base_priority);
+        LOG_DEBUG(
+                "[pid=%d][thread=%s][release_lock_base] Lock expired. [Lock should be retried][priority=%d][base priority=%d]",
+                pid, t_ptr->thread_id.c_str(), BASE_PRIORITY,
+                base_priority);
         reset_locks(BASE_PRIORITY, ls);
         return true;
     } else if (ls == ForceReleased) {
@@ -371,7 +376,7 @@ bool com::watergate::core::_semaphore_client::release_lock_base(int base_priorit
         reset_thread_locks(BASE_PRIORITY);
         client->reset_quota();
 
-        LOG_DEBUG("[pid=%d][thread=%s] Lock released by server.[priority=%d][base priority=%d]", pid,
+        LOG_DEBUG("[pid=%d][thread=%s][release_lock_base] Lock released by server.[priority=%d][base priority=%d]", pid,
                   t_ptr->thread_id.c_str(),
                   BASE_PRIORITY,
                   base_priority);
@@ -450,14 +455,15 @@ bool com::watergate::core::_semaphore_client::release_lock(int priority, int bas
             return false;
         }
     } else if (ls == Expired) {
-        LOG_DEBUG("[pid=%d][thread=%s] Lock expired. [resetting all semaphores] [priority=%d][base priority=%d]",
-                  pid, t_ptr->thread_id.c_str(), priority, base_priority);
+        LOG_DEBUG(
+                "[pid=%d][thread=%s][release_lock] Lock expired. [resetting all semaphores] [priority=%d][base priority=%d]",
+                pid, t_ptr->thread_id.c_str(), priority, base_priority);
         reset_locks(priority, ls);
         return true;
     } else if (ls == ForceReleased) {
         counts[priority]->count = 0;
         reset_thread_locks(priority);
-        LOG_DEBUG("[pid=%d][thread=%s] Lock released by server.[priority=%d][base priority=%d]", pid,
+        LOG_DEBUG("[pid=%d][thread=%s][release_lock] Lock released by server.[priority=%d][base priority=%d]", pid,
                   t_ptr->thread_id.c_str(), priority,
                   base_priority);
 

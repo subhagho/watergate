@@ -72,7 +72,7 @@ public class Test_ProcessPriorityFileStream {
 			cmd.add(PriorityTestRunner.class.getCanonicalName());
 			cmd.add("--priority=" + priority);
 			cmd.add("--index=" + ii);
-			cmd.add("--cycles=5");
+			cmd.add("--cycles=10");
 
 			LogUtils.mesg(getClass(), "Launching process [" + cmd.toString()
 					+ "]...");

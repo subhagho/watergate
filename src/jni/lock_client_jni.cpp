@@ -96,7 +96,7 @@ JNIEXPORT jdouble JNICALL Java_com_watergate_library_LockControlClient_getQuota
         jclass e_class =
                 jniEnv->FindClass("com/watergate/library/LockControlException");
         return jniEnv->ThrowNew(e_class,
-                         "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_findLockByName]");
+                                "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_findLockByName]");
     }
     return 0.0;
 }
@@ -104,6 +104,7 @@ JNIEXPORT jdouble JNICALL Java_com_watergate_library_LockControlClient_getQuota
 JNIEXPORT jint JNICALL Java_com_watergate_library_LockControlClient_lock__Ljava_lang_String_2ID
         (JNIEnv *jniEnv, jobject obj, jstring name, jint priority, jdouble quota) {
     try {
+        pid_t pid = getpid();
         const control_client *client = init_utils::get_client();
         CHECK_NOT_NULL(client);
 
@@ -119,7 +120,7 @@ JNIEXPORT jint JNICALL Java_com_watergate_library_LockControlClient_lock__Ljava_
 
         if (r == Locked && err == 0) {
             retval = record_utils::get_lock_acquire_enum_int(Locked);
-        } else if (err == ERR_CORE_CONTROL_TIMEOUT) {
+        } else if (r == Expired || err == ERR_CORE_CONTROL_TIMEOUT) {
             retval = record_utils::get_lock_acquire_enum_int(Timeout);
         } else if (r == QuotaReached) {
             retval = record_utils::get_lock_acquire_enum_int(QuotaReached);
@@ -127,6 +128,7 @@ JNIEXPORT jint JNICALL Java_com_watergate_library_LockControlClient_lock__Ljava_
             throw BASE_ERROR("Lock call returned error. [return=%s][error=%d]",
                              record_utils::get_lock_acquire_enum_string(r).c_str(), err);
         }
+        TRACE("[pid=%d] Lock stats = %s", pid, record_utils::get_lock_acquire_enum_string(r).c_str());
         return retval;
     } catch (const exception &e) {
         LOG_WARN("Error getting lock. [error=%s]", e.what());
@@ -137,13 +139,15 @@ JNIEXPORT jint JNICALL Java_com_watergate_library_LockControlClient_lock__Ljava_
         jclass e_class =
                 jniEnv->FindClass("com/watergate/library/LockControlException");
         return jniEnv->ThrowNew(e_class,
-                         "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_lock__Ljava_lang_String_2ID]");
+                                "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_lock__Ljava_lang_String_2ID]");
     }
 }
 
 JNIEXPORT jint JNICALL Java_com_watergate_library_LockControlClient_lock__Ljava_lang_String_2IDJ
         (JNIEnv *jniEnv, jobject obj, jstring name, jint priority, jdouble quota, jlong timeout) {
     try {
+        pid_t pid = getpid();
+
         const control_client *client = init_utils::get_client();
         CHECK_NOT_NULL(client);
 
@@ -159,7 +163,7 @@ JNIEXPORT jint JNICALL Java_com_watergate_library_LockControlClient_lock__Ljava_
 
         if (r == Locked && err == 0) {
             retval = record_utils::get_lock_acquire_enum_int(Locked);
-        } else if (err == ERR_CORE_CONTROL_TIMEOUT) {
+        } else if (r == Expired || err == ERR_CORE_CONTROL_TIMEOUT) {
             retval = record_utils::get_lock_acquire_enum_int(Timeout);
         } else if (r == QuotaReached) {
             retval = record_utils::get_lock_acquire_enum_int(QuotaReached);
@@ -167,6 +171,7 @@ JNIEXPORT jint JNICALL Java_com_watergate_library_LockControlClient_lock__Ljava_
             throw BASE_ERROR("Lock call returned error. [return=%s][error=%d]",
                              record_utils::get_lock_acquire_enum_string(r).c_str(), err);
         }
+        TRACE("[pid=%d] Lock stats = %s", pid, record_utils::get_lock_acquire_enum_string(r).c_str());
         return retval;
     } catch (const exception &e) {
         LOG_WARN("Error getting lock. [error=%s]", e.what());
@@ -177,7 +182,7 @@ JNIEXPORT jint JNICALL Java_com_watergate_library_LockControlClient_lock__Ljava_
         jclass e_class =
                 jniEnv->FindClass("com/watergate/library/LockControlException");
         return jniEnv->ThrowNew(e_class,
-                         "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_lock__Ljava_lang_String_2IDJ]");
+                                "Unhandled exception occurred. [source=Java_com_watergate_library_LockControlClient_lock__Ljava_lang_String_2IDJ]");
     }
 }
 

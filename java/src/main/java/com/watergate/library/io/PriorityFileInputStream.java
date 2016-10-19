@@ -6,6 +6,7 @@ import com.watergate.library.LockControlClient.ELockResult;
 import com.watergate.library.LockControlClient.EResourceType;
 import com.watergate.library.LockControlException;
 import com.watergate.library.ObjectState.StateException;
+import com.watergate.library.utils.LogUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -54,6 +55,7 @@ public class PriorityFileInputStream extends FileInputStream {
 		try {
 			if (lockname != null && !lockname.isEmpty()) {
 				ELockResult r = lockClient.getLock(lockname, priority, 1);
+
 				if (r == ELockResult.Locked) {
 					try {
 						return super.read();
@@ -143,6 +145,8 @@ public class PriorityFileInputStream extends FileInputStream {
 	private int readBlock(byte[] b, int off, int len) throws IOException,
 			LockControlException, TimeoutException {
 		ELockResult r = lockClient.getLock(lockname, priority, len);
+		LogUtils.debug(getClass(), "Lock result returned [" + r.name
+				() + "]");
 		if (r == ELockResult.Locked) {
 			currentLockCount++;
 			return super.read(b, off, len);
