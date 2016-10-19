@@ -88,13 +88,17 @@ public class PriorityFileOutputStream extends FileOutputStream {
 
 	@Override
 	public void write(byte[] b) throws IOException {
+		write(b, -1);
+	}
+
+	public void write(byte[] b, long timeout) throws IOException {
 		if (lockname != null && !lockname.isEmpty()) {
 			try {
 				currentLockCount = 0;
 				try {
 					double quota = lockClient.getQuota(lockname);
 					if (b.length <= quota) {
-						writeBlock(b, 0, b.length);
+						writeBlock(b, 0, b.length, timeout);
 					} else {
 						double rem = 0;
 						double written = 0;
@@ -104,7 +108,8 @@ public class PriorityFileOutputStream extends FileOutputStream {
 								if (rem > quota) {
 									rem = quota;
 								}
-								writeBlock(b, (int) written, (int) rem);
+								writeBlock(b, (int) written, (int) rem,
+										timeout);
 								written += rem;
 							} else {
 								break;
@@ -125,14 +130,20 @@ public class PriorityFileOutputStream extends FileOutputStream {
 	}
 
 	@Override
-	public void write(byte[] b, int off, int len) throws IOException {
+	public void write(byte[] b, int off, int len) throws
+			IOException {
+		write(b, off, len, -1);
+	}
+
+	public void write(byte[] b, int off, int len, long timeout) throws
+			IOException {
 		if (lockname != null && !lockname.isEmpty()) {
 			try {
 				currentLockCount = 0;
 				try {
 					double quota = lockClient.getQuota(lockname);
 					if (len <= quota) {
-						writeBlock(b, off, len);
+						writeBlock(b, off, len, timeout);
 					} else {
 						double rem = 0;
 						double written = 0;
@@ -142,7 +153,8 @@ public class PriorityFileOutputStream extends FileOutputStream {
 								if (rem > quota) {
 									rem = quota;
 								}
-								writeBlock(b, (off + (int) written), (int) rem);
+								writeBlock(b, (off + (int) written), (int)
+										rem, timeout);
 								written += rem;
 							} else {
 								break;
@@ -162,9 +174,14 @@ public class PriorityFileOutputStream extends FileOutputStream {
 		}
 	}
 
-	private void writeBlock(byte[] b, int off, int len) throws IOException,
+	private void writeBlock(byte[] b, int off, int len, long timeout) throws
+			IOException,
 			LockControlException, TimeoutException {
-		ELockResult r = lockClient.getLock(lockname, priority, len);
+		ELockResult r = ELockResult.None;
+		if (timeout > 0) {
+			r = lockClient.getLock(lockname, priority, len, timeout);
+		} else
+			r = lockClient.getLock(lockname, priority, len);
 		LogUtils.debug(getClass(), "Lock result returned [" + r.name
 				() + "]");
 		if (r == ELockResult.Locked) {

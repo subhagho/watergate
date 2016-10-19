@@ -18,7 +18,7 @@ public class Test_ProcessPriorityFileStream {
 	private static final String CONFIG_FILE =
 			"../test/data/test-sem-conf.json";
 	private static final String CONTROL_CONFIG_PATH = "/configuration/control";
-	private static final int PROCESS_COUNT = 20;
+	private static final int PROCESS_COUNT = 24;
 	private static final String LIBRARY_PATH =
 			"../cmake/";
 	private static final String TARGET_JAR =

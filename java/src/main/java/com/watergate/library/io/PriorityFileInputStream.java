@@ -52,32 +52,15 @@ public class PriorityFileInputStream extends FileInputStream {
 
 	@Override
 	public int read() throws IOException {
-		try {
-			if (lockname != null && !lockname.isEmpty()) {
-				ELockResult r = lockClient.getLock(lockname, priority, 1);
-
-				if (r == ELockResult.Locked) {
-					try {
-						return super.read();
-					} finally {
-						lockClient.release(lockname, priority);
-					}
-				} else {
-					throw new LockControlException(String.format("Error " +
-							"reading " +
-							" from " +
-							"locked file. [result=%s]", r.name()));
-				}
-			} else {
-				return super.read();
-			}
-		} catch (Throwable t) {
-			throw new IOException(t);
-		}
+		throw new IOException("Method not supported...");
 	}
 
 	@Override
 	public int read(byte[] b) throws IOException {
+		return read(b, -1);
+	}
+
+	public int read(byte[] b, long timeout) throws IOException {
 		try {
 			if (lockname != null && !lockname.isEmpty()) {
 				currentLockCount = 0;
@@ -89,7 +72,7 @@ public class PriorityFileInputStream extends FileInputStream {
 						if (rem > quota) {
 							rem = quota;
 						}
-						int r = readBlock(b, read, rem);
+						int r = readBlock(b, read, rem, timeout);
 						if (r < rem)
 							break;
 						read += r;
@@ -110,7 +93,13 @@ public class PriorityFileInputStream extends FileInputStream {
 	}
 
 	@Override
-	public int read(byte[] b, int off, int len) throws IOException {
+	public int read(byte[] b, int off, int len) throws
+			IOException {
+		return read(b, off, len, -1);
+	}
+
+	public int read(byte[] b, int off, int len, long timeout) throws
+			IOException {
 		try {
 			if (lockname != null && !lockname.isEmpty()) {
 				currentLockCount = 0;
@@ -123,7 +112,7 @@ public class PriorityFileInputStream extends FileInputStream {
 						if (rem > quota) {
 							rem = quota;
 						}
-						int r = readBlock(b, (off + read), rem);
+						int r = readBlock(b, (off + read), rem, timeout);
 						if (r < rem)
 							break;
 						read += r;
@@ -142,9 +131,14 @@ public class PriorityFileInputStream extends FileInputStream {
 		}
 	}
 
-	private int readBlock(byte[] b, int off, int len) throws IOException,
+	private int readBlock(byte[] b, int off, int len, long timeout) throws
+			IOException,
 			LockControlException, TimeoutException {
-		ELockResult r = lockClient.getLock(lockname, priority, len);
+		ELockResult r = ELockResult.None;
+		if (timeout > 0) {
+			r = lockClient.getLock(lockname, priority, len, timeout);
+		} else
+			r = lockClient.getLock(lockname, priority, len);
 		LogUtils.debug(getClass(), "Lock result returned [" + r.name
 				() + "]");
 		if (r == ELockResult.Locked) {
