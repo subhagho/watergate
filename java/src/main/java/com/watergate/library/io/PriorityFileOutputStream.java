@@ -19,6 +19,7 @@ public class PriorityFileOutputStream extends FileOutputStream {
 	private short priority;
 	private String lockname = null;
 	private int currentLockCount = 0;
+	private long timeout = -1;
 
 	public PriorityFileOutputStream(String name, short priority) throws
 			LockControlException, StateException, IOException {
@@ -49,6 +50,12 @@ public class PriorityFileOutputStream extends FileOutputStream {
 		setup(priority, file.getCanonicalPath());
 	}
 
+	public PriorityFileOutputStream withTimeout(long timeout) {
+		this.timeout = timeout;
+
+		return this;
+	}
+
 	public short getPriority() {
 		return priority;
 	}
@@ -65,30 +72,12 @@ public class PriorityFileOutputStream extends FileOutputStream {
 
 	@Override
 	public void write(int b) throws IOException {
-		if (lockname != null && !lockname.isEmpty()) {
-			try {
-				ELockResult r = lockClient.getLock(lockname, priority, 1);
-				if (r == ELockResult.Locked) {
-					try {
-						super.write(b);
-					} finally {
-						lockClient.release(lockname, priority);
-					}
-				} else {
-					throw new LockControlException(String.format("Error writing to " +
-							"locked file. [result=%s]", r.name()));
-				}
-			} catch (Throwable t) {
-				throw new IOException(t);
-			}
-		} else {
-			super.write(b);
-		}
+		throw new IOException("Method not supported.");
 	}
 
 	@Override
 	public void write(byte[] b) throws IOException {
-		write(b, -1);
+		write(b, timeout);
 	}
 
 	public void write(byte[] b, long timeout) throws IOException {
@@ -132,7 +121,7 @@ public class PriorityFileOutputStream extends FileOutputStream {
 	@Override
 	public void write(byte[] b, int off, int len) throws
 			IOException {
-		write(b, off, len, -1);
+		write(b, off, len, timeout);
 	}
 
 	public void write(byte[] b, int off, int len, long timeout) throws

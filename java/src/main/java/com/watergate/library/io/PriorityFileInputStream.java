@@ -21,6 +21,7 @@ public class PriorityFileInputStream extends FileInputStream {
 	private short priority;
 	private String lockname = null;
 	private int currentLockCount = 0;
+	private long timeout = -1;
 
 	public PriorityFileInputStream(String name, short priority) throws
 			LockControlException, StateException, IOException {
@@ -35,6 +36,11 @@ public class PriorityFileInputStream extends FileInputStream {
 		setup(priority, file.getCanonicalPath());
 	}
 
+	public PriorityFileInputStream withTimeout(long timeout) {
+		this.timeout = timeout;
+
+		return this;
+	}
 
 	public short getPriority() {
 		return priority;
@@ -57,7 +63,7 @@ public class PriorityFileInputStream extends FileInputStream {
 
 	@Override
 	public int read(byte[] b) throws IOException {
-		return read(b, -1);
+		return read(b, timeout);
 	}
 
 	public int read(byte[] b, long timeout) throws IOException {
@@ -95,7 +101,7 @@ public class PriorityFileInputStream extends FileInputStream {
 	@Override
 	public int read(byte[] b, int off, int len) throws
 			IOException {
-		return read(b, off, len, -1);
+		return read(b, off, len, timeout);
 	}
 
 	public int read(byte[] b, int off, int len, long timeout) throws
