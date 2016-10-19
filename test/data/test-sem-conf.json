@@ -5,10 +5,9 @@
         "app.name": "test-sem-app"
       },
       "logging": {
-        "level": "debug",
+        "level": "trace",
         "size": "5M",
         "max-files": "3",
-        "mode": "debug",
         "console": "true"
       }
     },
@@ -43,7 +42,7 @@
     },
     "test-lock-client": {
       "process": "/work/dev/wookler/watergate/test/cmake/test_lock_client",
-      "process.count": "30",
+      "process.count": "12",
       "sleep.time": "30",
       "lock.tries": "100"
     },

@@ -69,18 +69,24 @@ void com::watergate::tests::common::basic_lock_client::run() {
 
         usleep((priority + 1) * 50 * 1000);
         for (int ii = 0; ii < 8; ii++) {
+            count = 0;
+            LOG_DEBUG("[pid=%d][thread=%s][name=%s][priority=%d] run sequence %d", pid, tid.c_str(),
+                      FS_CONTROL_NAME, priority, ii);
             while (true) {
+                LOG_DEBUG("[pid=%d][thread=%s][name=%s][priority=%d] Lock try count %d", pid, tid.c_str(),
+                          FS_CONTROL_NAME, priority, count);
                 int err = 0;
                 t.restart();
                 _lock_state r = control->lock(FS_CONTROL_NAME, priority, 200, 5000, &err);
                 t.pause();
+                LOG_DEBUG("[pid=%d][thread=%s][name=%s][priority=%d] Lock get count %d [response=%s]", pid, tid.c_str(),
+                          FS_CONTROL_NAME, priority, count, record_utils::get_lock_acquire_enum_string(r).c_str());
                 if (r == Locked && err == 0) {
                     LOG_INFO("Successfully acquired lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d]", pid,
                              tid.c_str(),
                              FS_CONTROL_NAME, priority,
                              ii);
-                    count++;
-                    usleep((2 - priority) * 500 * 1000);
+                    usleep((3 - priority) * 500 * 1000);
                     bool r = control->release(FS_CONTROL_NAME, priority);
                     if (r) {
                         LOG_INFO("Successfully released lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d]", pid,
@@ -90,13 +96,16 @@ void com::watergate::tests::common::basic_lock_client::run() {
                     }
                     break;
                 } else if (err != 0) {
-                    LOG_ERROR("Filed to acquired lock [thread=%s][name=%s][priority=%d][try=%d][response=%d][error=%d]",
-                              tid.c_str(),
-                              FS_CONTROL_NAME, priority, ii, r, err);
+                    LOG_ERROR(
+                            "Filed to acquired lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d][response=%d][error=%d]",
+                            pid, tid.c_str(),
+                            FS_CONTROL_NAME, priority, ii, r, err);
                 } else
-                    LOG_ERROR("Filed to acquired lock [thread=%s][name=%s][priority=%d][try=%d][response=%d]",
-                              tid.c_str(),
+                    LOG_ERROR("Filed to acquired lock [pid=%d][thread=%s][name=%s][priority=%d][try=%d][response=%d]",
+                              pid, tid.c_str(),
                               FS_CONTROL_NAME, priority, ii, r);
+                usleep(5 * 1000);
+                count++;
             }
             START_ALARM(sleep_timeout * (priority + 1));
         }
@@ -107,7 +116,11 @@ void com::watergate::tests::common::basic_lock_client::run() {
         control->dump();
         control->test_assert();
     } catch (const exception &e) {
+        cout << "Run exited with error. [error=" << e.what() << "]\n";
         LOG_CRITICAL("Run exited with error. [error=%s]", e.what());
+    } catch (...) {
+        cout << "Run exited with error. [error=UNKOWN]\n";
+        LOG_CRITICAL("Run exited with error. [error=UNKOWN]");
     }
 }
 
@@ -177,10 +190,10 @@ int main(int argc, char *argv[]) {
 
         CHECK_AND_FREE(client);
         LOG_DEBUG("[pid=%d][index=%d] Released run client handle...", getpid(), index);
-        init_utils::dispose();
         LOG_DEBUG("[pid=%d][index=%d] Disposed runtime environment...", getpid(), index);
 
         LOG_DEBUG("[pid=%d][index=%d] Exiting run...", getpid(), index);
+        init_utils::dispose();
         exit(0);
     } catch (const exception &e) {
         cout << "ERROR : " << e.what() << "\n";

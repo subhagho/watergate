@@ -11,6 +11,7 @@
 using namespace com::watergate::core;
 using namespace com::watergate::common;
 
+/*
 TEST_CASE("Basic control setup", "[com::watergate::core::control_def]") {
     init_utils::create_env(CONFIG_FILE);
     const __env *env = init_utils::get_env();
@@ -194,6 +195,7 @@ TEST_CASE("Test lock timeout operations", "[com::watergate::core::control_def]")
 
     init_utils::dispose();
 }
+*/
 
 TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]") {
     char cwd[1024];
@@ -257,6 +259,8 @@ TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]"
 
         usleep(2000);
     }
+    usleep(30 * 1000 * 1000);
+
     for (int ii = 0; ii < p_count; ii++) {
         if (pids[ii] <= 0) {
             continue;
@@ -267,11 +271,14 @@ TEST_CASE("Inter-process lock operations", "[com::watergate::core::control_def]"
         while (!WIFEXITED(status)) {
             waitpid(pids[ii], &status, 0); /* Wait for the process to complete */
         }
-
+        if (WIFSIGNALED(status)) {
+            LOG_ERROR("[pid=%d] Process terminated with error.", pids[ii]);
+        }
         LOG_INFO("Process [pid=%d] exited with status [%d]", pids[ii], status);
     }
 
+    CHECK_AND_FREE(manager);
+
     init_utils::dispose();
 
-    CHECK_AND_FREE(manager);
 }

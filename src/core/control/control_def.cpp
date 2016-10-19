@@ -155,11 +155,13 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
     timer t;
     t.start();
 
+    pid_t pid = getpid();
+    string thread_id = thread_lock_record::get_current_thread();
 
     _lock_state ret = wait_lock(name, priority, priority, quota);
     if (ret == Error) {
         throw CONTROL_ERROR("Error acquiring base lock. [name=%s]", name.c_str());
-    } else if (ret != QuotaReached) {
+    } else if (ret == Locked) {
         if (t.get_current_elapsed() > timeout && (priority != 0)) {
             release_lock(name, priority, priority);
             *err = ERR_CORE_CONTROL_TIMEOUT;
@@ -188,9 +190,6 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
                     }
                     ret = this->try_lock(name, ii, priority, quota);
                     if (ret == Locked || ret == QuotaReached || ret == Error) {
-                        if (ret == Locked) {
-                            locked_priority = ii;
-                        }
                         break;
                     } else {
                         if (!a.start()) {
@@ -200,10 +199,20 @@ com::watergate::core::control_client::lock_get(string name, int priority, double
                     }
                 }
                 if (ret != Locked) {
+                    LOG_DEBUG(
+                            "[pid=%d][thread=%s] Releasing acquired locks. [base priority=%d][locked priority=%d][return=%s]",
+                            pid, thread_id.c_str(), priority, locked_priority,
+                            record_utils::get_lock_acquire_enum_string(ret).c_str());
                     for (int jj = priority; jj >= locked_priority; jj--) {
-                        release_lock(name, jj, priority);
+                        bool r = release_lock(name, jj, priority);
+                        TRACE(
+                                "[pid=%d][thread=%s] Lock release status [%s]. [base priority=%d][priority=%d][return=%s]",
+                                pid, thread_id.c_str(), (r ? "true" : "false"), priority, jj,
+                                record_utils::get_lock_acquire_enum_string(ret).c_str());
                     }
                     break;
+                } else {
+                    locked_priority = ii;
                 }
             }
 

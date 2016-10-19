@@ -289,18 +289,23 @@ namespace com {
                                 "Lock record has been reset. [current owner=%d][proc id=%d]", lock_record->app.proc_id,
                                 pid);
                     }
+                    string thread_id = thread_lock_record::get_current_thread();
 
                     lock_record->app.last_active_ts = time_utils::now();
                     if (lock_record->lock.locks[priority].state == _lock_state::Locked) {
                         if (!is_lock_active(priority)) {
-                            lock_record->lock.locks[priority].state = _lock_state::None;
-                            lock_record->lock.locks[priority].acquired_time = 0;
+                            TRACE("[pid=%d][thread=%s][name=%s][priority=%d] Lock has expired.", pid, thread_id.c_str(),
+                                  name.c_str(), priority);
                             r = Expired;
                         } else if (quota > 0) {
                             double q = get_quota();
                             if (q > 0) {
                                 double aq = q - lock_record->lock.quota_used;
                                 if (aq < quota) {
+                                    TRACE("[pid=%d][thread=%s][name=%s][priority=%d]  Quota reached. Release lock.",
+                                          pid,
+                                          thread_id.c_str(),
+                                          name.c_str(), priority);
                                     return ReleaseLock;
                                 }
                             }
@@ -309,18 +314,30 @@ namespace com {
                             r = Locked;
                         }
                     } else if (lock_record->lock.locks[priority].state == _lock_state::ForceReleased) {
+                        TRACE("[pid=%d][thread=%s][name=%s][priority=%d]  Lock force released by server.", pid,
+                              thread_id.c_str(),
+                              name.c_str(), priority);
                         lock_record->lock.locks[priority].state = _lock_state::None;
                         r = ForceReleased;
                     } else if (lock_record->lock.locks[priority].state == _lock_state::QuotaReached) {
                         uint64_t now = time_utils::now();
                         if (now > (lock_record->lock.locks[priority].acquired_time + get_lock_lease_time())) {
+                            TRACE("[pid=%d][thread=%s][name=%s][priority=%d]  Quota timeout reached.", pid,
+                                  thread_id.c_str(),
+                                  name.c_str(), priority);
                             lock_record->lock.locks[priority].state = _lock_state::None;
                             lock_record->lock.quota_used = 0;
                             r = None;
-                        } else
+                        } else {
+                            TRACE("[pid=%d][thread=%s][name=%s][priority=%d]  Quota reached.", pid, thread_id.c_str(),
+                                  name.c_str(), priority);
                             r = QuotaReached;
+                        }
                     }
-
+                    TRACE("[pid=%d][thread=%s][name=%s][priority=%d]  Return value = %s. [state=%s]", pid,
+                          thread_id.c_str(),
+                          name.c_str(), priority, record_utils::get_lock_acquire_enum_string(r).c_str(),
+                          record_utils::get_lock_acquire_enum_string(lock_record->lock.locks[priority].state).c_str());
                     return r;
                 }
 

@@ -351,8 +351,12 @@ namespace com {
 
                 void test_assert() {
                     if (!IS_EMPTY(counts)) {
+                        pid_t pid = getpid();
+                        string thread_id = thread_lock_record::get_current_thread();
                         for (int ii = 0; ii < priorities; ii++) {
-                            LOG_DEBUG("[lock=%s][priority=%d] count=%d", name->c_str(), ii, counts[ii]->count);
+                            LOG_DEBUG("[pid=%d][thread=%s] Lock status [lock=%s][priority=%d] count=%d", pid,
+                                      thread_id.c_str(), name->c_str(),
+                                      ii, counts[ii]->count);
                         }
                         for (int ii = 0; ii < priorities; ii++) {
                             _assert(counts[ii]->count == 0);
